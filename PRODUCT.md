@@ -15,7 +15,11 @@ sustained, and no round needs more than a phone and a few minutes of attention.
   selection.
 
 ## Where decided truth lives
-(nothing yet)
+- what a map must satisfy to be playable -> src/domain/map.ts
+- palette and type tokens -> src/styles.css
 
 ## Deferred
-(nothing yet)
+- 2026-09-20 — The palette is not settled. It stays PROVISIONAL in
+  src/styles.css until players have colours, because six distinguishable player
+  colours sitting on the map is the constraint the palette actually has to
+  survive, and that does not exist yet.
