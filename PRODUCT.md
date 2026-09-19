@@ -13,9 +13,14 @@ sustained, and no round needs more than a phone and a few minutes of attention.
   territories grouped into continents that grant a reinforcement bonus to a
   player holding all of them. Maps are not generated, and there is no map
   selection.
+- The game is published as a static site to GitHub Pages at
+  https://stefanvr.github.io/risky-turn/ on every push to main. There is no
+  server and no account: a player opens a URL. A build that fails the check is
+  never published.
 
 ## Where decided truth lives
 - what a map must satisfy to be playable -> src/domain/map.ts
+- published URL and asset base -> vite.config.ts, .github/workflows/deploy.yml
 - palette and type tokens -> src/styles.css
 
 ## Deferred
