@@ -1,0 +1,98 @@
+/*
+ * PROVISIONAL: palette and type. Chosen as tokens so swapping them is a
+ * one-file edit once the game's look is settled.
+ */
+:root {
+  --sea: #14202b;
+  --land: #3d5468;
+  --land-selected: #c9784f;
+  --border: #14202b;
+  --ink: #eef3f7;
+  --ink-dim: #9fb3c4;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--sea);
+  color: var(--ink);
+  font-family: var(--font);
+  /* A conquest map is tapped, not text-selected or double-tap-zoomed. */
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100dvh;
+  padding: max(0.75rem, env(safe-area-inset-top)) 0.75rem
+    max(0.75rem, env(safe-area-inset-bottom));
+}
+
+.board__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.board__map {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.board__caption {
+  margin: 0;
+  min-height: 1.4em;
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--ink-dim);
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+.territory {
+  fill: var(--land);
+  stroke: var(--border);
+  stroke-width: 1;
+  stroke-linejoin: round;
+  cursor: pointer;
+  transition: fill 120ms ease-out;
+}
+
+.territory[aria-pressed="true"] {
+  fill: var(--land-selected);
+}
+
+/* Touch leaves focus behind; only keyboard focus should be drawn. */
+.territory:focus {
+  outline: none;
+}
+
+.territory:focus-visible {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.territory__label {
+  fill: var(--ink);
+  font-family: var(--font);
+  font-size: 5px;
+  pointer-events: none;
+}
