@@ -35,9 +35,9 @@ jobs:
       # a build that fails typecheck or tests never reaches the public URL.
       - run: pnpm run check
 
+      # Pages must already have "GitHub Actions" as its source; the default
+      # workflow token is not permitted to turn Pages on by itself.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
