@@ -22,8 +22,13 @@ export function deploy(
 ): GameState {
   requirePhase(state, "deploy");
   if (armies < 1) illegal(`cannot deploy ${armies} armies`);
+  if (state.reinforcementsLeft === 0) illegal("no reinforcements left to place");
   if (armies > state.reinforcementsLeft) {
-    illegal(`only ${state.reinforcementsLeft} reinforcements remain`);
+    illegal(
+      state.reinforcementsLeft === 1
+        ? "only 1 reinforcement remains"
+        : `only ${state.reinforcementsLeft} reinforcements remain`,
+    );
   }
   const holding = holdingOf(state, territory);
   if (holding.owner !== state.currentPlayer) {

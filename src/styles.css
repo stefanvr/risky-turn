@@ -5,7 +5,13 @@
 :root {
   --sea: #14202b;
   --land: #3d5468;
-  --land-selected: #c9784f;
+  /* PROVISIONAL: one colour per player, in turn order. */
+  --player-1: #c1543f;
+  --player-2: #3f7fc1;
+  --player-3: #4f9e6a;
+  --player-4: #b78b3a;
+  --player-5: #8a5bb0;
+  --player-6: #3f9ea6;
   --border: #14202b;
   --ink: #eef3f7;
   --ink-dim: #9fb3c4;
@@ -48,18 +54,45 @@ body {
   text-align: center;
 }
 
+.board__game {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .board__map {
   flex: 1;
   min-height: 0;
   display: flex;
 }
 
-.board__caption {
+.board__status {
   margin: 0;
-  min-height: 1.4em;
+  min-height: 2.6em;
   text-align: center;
   font-size: 0.95rem;
+  line-height: 1.3;
   color: var(--ink-dim);
+}
+
+.board__end {
+  /* A thumb needs a target this size; do not shrink it to fit a layout. */
+  min-height: 3rem;
+  border: 0;
+  border-radius: 0.6rem;
+  background: var(--land);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.board__end:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .map {
@@ -76,8 +109,18 @@ body {
   transition: fill 120ms ease-out;
 }
 
+.territory[data-player="1"] { fill: var(--player-1); }
+.territory[data-player="2"] { fill: var(--player-2); }
+.territory[data-player="3"] { fill: var(--player-3); }
+.territory[data-player="4"] { fill: var(--player-4); }
+.territory[data-player="5"] { fill: var(--player-5); }
+.territory[data-player="6"] { fill: var(--player-6); }
+
+/* Selection has to read against every player colour, so it is drawn as an
+   outline rather than another fill. */
 .territory[aria-pressed="true"] {
-  fill: var(--land-selected);
+  stroke: var(--ink);
+  stroke-width: 2.5;
 }
 
 /* Touch leaves focus behind; only keyboard focus should be drawn. */
@@ -90,9 +133,19 @@ body {
   stroke-width: 2;
 }
 
-.territory__label {
+.territory__name,
+.territory__armies {
   fill: var(--ink);
   font-family: var(--font);
-  font-size: 5px;
   pointer-events: none;
+}
+
+.territory__name {
+  font-size: 4.5px;
+  opacity: 0.85;
+}
+
+.territory__armies {
+  font-size: 9px;
+  font-weight: 700;
 }

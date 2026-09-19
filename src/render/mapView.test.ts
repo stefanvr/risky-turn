@@ -1,11 +1,26 @@
 import { describe, expect, it } from "vitest";
 import { createMapView } from "./mapView";
 import { provingMap } from "../maps/proving";
+import type { TerritoryPresentation } from "../ui/presentation";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 function regions(root: SVGSVGElement): SVGElement[] {
   return [...root.querySelectorAll<SVGElement>("[data-territory]")];
+}
+
+function board(
+  overrides: Readonly<Record<string, Partial<TerritoryPresentation>>> = {},
+): TerritoryPresentation[] {
+  return provingMap.territories.map((territory) => ({
+    id: territory.id,
+    name: territory.name,
+    owner: "red",
+    playerNumber: 1,
+    armies: 1,
+    selected: false,
+    ...overrides[territory.id],
+  }));
 }
 
 describe("map view", () => {
@@ -30,18 +45,37 @@ describe("map view", () => {
     );
   });
 
+  it("shows each territory's army count", () => {
+    const view = createMapView(provingMap);
+    view.show(board({ charlie: { armies: 7 } }));
+    expect(view.element.querySelector('[data-armies="charlie"]')?.textContent).toBe("7");
+  });
+
+  it("marks each region with the number of the player holding it", () => {
+    const view = createMapView(provingMap);
+    view.show(board({ echo: { playerNumber: 3 } }));
+    const echo = view.element.querySelector('[data-territory="echo"]');
+    expect(echo?.getAttribute("data-player")).toBe("3");
+  });
+
   it("marks only the selected region as selected", () => {
     const view = createMapView(provingMap);
-    const [first, second] = provingMap.territories;
 
-    view.showSelection(first!.id);
-    expect(selectedIds(view.element)).toEqual([first!.id]);
+    view.show(board({ alfa: { selected: true } }));
+    expect(selectedIds(view.element)).toEqual(["alfa"]);
 
-    view.showSelection(second!.id);
-    expect(selectedIds(view.element)).toEqual([second!.id]);
+    view.show(board({ bravo: { selected: true } }));
+    expect(selectedIds(view.element)).toEqual(["bravo"]);
 
-    view.showSelection(null);
+    view.show(board());
     expect(selectedIds(view.element)).toEqual([]);
+  });
+
+  it("describes a region for a screen reader as its holder and strength", () => {
+    const view = createMapView(provingMap);
+    view.show(board({ delta: { owner: "blue", armies: 1 } }));
+    const delta = view.element.querySelector('[data-territory="delta"]');
+    expect(delta?.getAttribute("aria-label")).toBe("Delta, held by blue, 1 army");
   });
 });
 

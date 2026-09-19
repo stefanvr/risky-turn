@@ -1,17 +1,15 @@
-import { mountMap } from "./ui/mapInteraction";
+import { mountGame } from "./ui/game";
+import { newGame } from "./domain/setup";
+import { diceFrom } from "./domain/dice";
+import { seededRandom } from "./domain/random";
 import { provingMap } from "./maps/proving";
 import "./styles.css";
 
-const host = document.querySelector("#map");
-const caption = document.querySelector("#caption");
-if (!host || !caption) throw new Error("page is missing its map or caption element");
+const host = document.querySelector("#game");
+if (!host) throw new Error("page is missing its game element");
 
-const nameOf = new Map(provingMap.territories.map((t) => [t.id, t.name]));
+// The only place a seed is drawn from the clock: everything below it is
+// reproducible from that number alone.
+const random = seededRandom(Date.now());
 
-mountMap(host, provingMap, {
-  onSelectionChanged: (selected) => {
-    caption.textContent = selected === null
-      ? "Tap a territory."
-      : `${nameOf.get(selected)} selected.`;
-  },
-});
+mountGame(host, newGame(provingMap, ["Red", "Blue"], random), diceFrom(random));

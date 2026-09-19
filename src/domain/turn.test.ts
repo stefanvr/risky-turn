@@ -29,6 +29,11 @@ describe("deploying reinforcements", () => {
     expect(() => deploy(state, "alfa", 3)).toThrow(/2/);
   });
 
+  it("says plainly that there is nothing left to place", () => {
+    const state = stateWhere(board, { reinforcementsLeft: 0 });
+    expect(() => deploy(state, "alfa", 1)).toThrow(/no reinforcements left/i);
+  });
+
   it("refuses to leave the deploy phase with armies still in hand", () => {
     const state = stateWhere(board, { reinforcementsLeft: 1 });
     expect(() => endPhase(state)).toThrow(IllegalMoveError);
