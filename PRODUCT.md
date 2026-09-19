@@ -33,6 +33,9 @@ sustained, and no round needs more than a phone and a few minutes of attention.
   src/styles.css until players have colours, because six distinguishable player
   colours sitting on the map is the constraint the palette actually has to
   survive, and that does not exist yet.
+- 2026-09-20 — Player colours are placeholders, one token per player in turn
+  order, PROVISIONAL in src/styles.css alongside the palette. They read clearly
+  enough to play with and are deliberately not settled yet.
 - 2026-09-20 — On taking a territory the attacker advances with everything but
   one army, rather than being asked how many to move. It stays PROVISIONAL in
   src/domain/turn.ts. The choice is real tactical depth, but a second dialog in
