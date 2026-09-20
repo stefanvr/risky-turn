@@ -2,8 +2,8 @@ import { territoriesOf } from "./game";
 import type { GameState, PlayerId } from "./game";
 
 /** However small an empire gets, a turn is worth at least this many armies. */
-const FLOOR = 3;
-const TERRITORIES_PER_ARMY = 3;
+export const REINFORCEMENT_FLOOR = 3;
+export const TERRITORIES_PER_ARMY = 3;
 
 /**
  * Armies a player receives at the start of their turn: one per three
@@ -15,7 +15,10 @@ export function reinforcementsFor(state: GameState, player: PlayerId): number {
   const held = territoriesOf(state, player);
   if (held.length === 0) return 0;
 
-  const fromTerritories = Math.max(FLOOR, Math.floor(held.length / TERRITORIES_PER_ARMY));
+  const fromTerritories = Math.max(
+    REINFORCEMENT_FLOOR,
+    Math.floor(held.length / TERRITORIES_PER_ARMY),
+  );
   return fromTerritories + continentBonus(state, player);
 }
 

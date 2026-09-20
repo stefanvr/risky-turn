@@ -194,7 +194,7 @@ describe("passing the phone", () => {
     handoverButton().click();
     expect(handoverButton().hidden).toBe(true);
     expect(mapHidden()).toBe(false);
-    expect(status()).toMatch(/blue/i);
+    expect(host.querySelector('[data-role="turn"]')?.textContent).toMatch(/blue/i);
   });
 
   it("does not cover the board merely because a phase ended", () => {
@@ -374,6 +374,15 @@ describe("arming a squadron", () => {
     for (const territory of Object.keys(armed)) {
       expect(reachOf(territory), `${territory} stayed marked`).toBe("none");
     }
+  });
+});
+
+describe("stationing a bomber", () => {
+  it("says why a tap was refused rather than repeating the invitation", () => {
+    mountGame(host, stateWhere(board, { reinforcementsLeft: 5 }), fixedDice([1]));
+    host.querySelector<HTMLButtonElement>('[data-role="build-bomber"]')!.click();
+    tap("bravo");
+    expect(status()).toMatch(/does not hold/i);
   });
 });
 

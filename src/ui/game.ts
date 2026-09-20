@@ -1,5 +1,12 @@
 import { createMapView } from "../render/mapView";
-import { describeOutcome, describeRaid, playerNumberOf, presentGame } from "./presentation";
+import {
+  describeOutcome,
+  describeRaid,
+  legendOf,
+  playerNumberOf,
+  presentGame,
+  turnOf,
+} from "./presentation";
 import { drawDie } from "../render/dice";
 import type { BattleShown, RaidShown } from "./presentation";
 import { attack, bomb, buildBomber, deploy, digIn, endPhase, fortify, IllegalMoveError } from "../domain/turn";
@@ -33,8 +40,40 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
   let bombingFrom: TerritoryId | null = null;
   /** Set while the phone is between players, so no one reads the other's board. */
   let awaiting: PlayerId | null = null;
+  /** Set while the legend is open over the board. */
+  let reading = false;
 
   const view = createMapView(state.map);
+
+  /*
+   * Whose turn it is, what the turn still owes, and the way in to the legend.
+   * It is the one thing on screen that never changes its subject, so nothing
+   * that reports an event has to keep repeating what is permanently true.
+   */
+  const bar = document.createElement("header");
+  bar.className = "board__turn";
+  bar.setAttribute("data-role", "turn");
+
+  const whose = document.createElement("span");
+  whose.className = "board__whose";
+
+  const doing = document.createElement("span");
+  doing.className = "board__doing";
+
+  const info = document.createElement("button");
+  info.className = "board__info";
+  info.type = "button";
+  info.setAttribute("data-role", "legend-open");
+  info.setAttribute("aria-expanded", "false");
+  info.setAttribute("aria-label", "What things cost and what a turn earns");
+  info.textContent = "i";
+
+  bar.append(whose, doing, info);
+
+  const legend = document.createElement("section");
+  legend.className = "board__legend";
+  legend.setAttribute("data-role", "legend");
+  legend.hidden = true;
 
   const map = document.createElement("div");
   map.className = "board__map";
@@ -67,20 +106,36 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
   handover.setAttribute("data-role", "handover");
   handover.hidden = true;
 
-  host.append(map, handover, battleLine, status, buildControl, endControl);
+  host.append(bar, legend, map, handover, battleLine, status, buildControl, endControl);
+  fillLegend(legend, initial);
 
   const render = (): void => {
     const taking = awaiting;
     const passing = taking !== null;
 
-    map.hidden = passing;
-    endControl.hidden = passing;
+    const turn = turnOf(state);
+    whose.textContent = turn.player;
+    whose.setAttribute("data-player", String(turn.playerNumber));
+    doing.textContent = turn.doing;
+    info.setAttribute("aria-expanded", String(reading));
+    legend.hidden = passing || !reading;
+
+    map.hidden = passing || reading;
+    // The legend owns the screen while it is open: it is read, not played
+    // against, and a sheet that has to be scrolled past the controls is one
+    // whose last line is never found.
+    endControl.hidden = passing || reading;
+    status.hidden = reading;
     handover.hidden = !passing;
-    battleLine.hidden = passing || lastAction === undefined;
-    buildControl.hidden = passing || state.phase !== "deploy" || state.winner !== null;
+    battleLine.hidden = passing || reading || lastAction === undefined;
+    buildControl.hidden =
+      passing || reading || state.phase !== "deploy" || state.winner !== null;
 
     if (taking !== null) {
       handover.textContent = `${taking}: tap to start your turn`;
+      // The bar already wears the incoming player's colour; the panel says the
+      // same thing at the size of the screen, because this is the one moment
+      // the wrong player picking the phone up cannot be undone.
       // The panel wears that player's own colour, so who is up is answered
       // before the sentence on it is read.
       handover.setAttribute("data-player", String(playerNumberOf(state, taking)));
@@ -90,9 +145,13 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
 
     const shown = presentGame(state, selected, note, bombingFrom);
     view.show(shown.territories);
-    status.textContent = buyingBomber
-      ? `Tap one of your territories to station a bomber there.`
-      : shown.status;
+    // While a bomber is being placed the line asks for the tap, unless the last
+    // tap was refused: a move that did nothing has to say so, or the player is
+    // left tapping ground that will never take it.
+    status.textContent =
+      buyingBomber && note === undefined
+        ? "Tap one of your territories to station a bomber there."
+        : shown.status;
     showAction(battleLine, lastAction);
     buildControl.textContent = buyingBomber
       ? "Choose where"
@@ -248,8 +307,15 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
       note = undefined;
       buyingBomber = false;
       bombingFrom = null;
+      // The phone goes over with nothing of the last turn left open on it.
+      reading = false;
       render();
     }
+  });
+
+  info.addEventListener("click", () => {
+    reading = !reading;
+    render();
   });
 
   buildControl.addEventListener("click", () => {
@@ -267,6 +333,48 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
   render();
 
   return { state: () => state };
+}
+
+/**
+ * The legend: what things cost, what a turn earns, and what each continent on
+ * this board pays. It is drawn once, from the rules themselves, because none
+ * of it changes while a game is played.
+ */
+function fillLegend(into: HTMLElement, state: GameState): void {
+  for (const section of legendOf(state)) {
+    const title = document.createElement("h2");
+    title.className = "legend__title";
+    title.textContent = section.title;
+    into.append(title);
+
+    const entries = document.createElement("dl");
+    entries.className = "legend__entries";
+    for (const entry of section.entries) {
+      const row = document.createElement("div");
+      row.className = "legend__entry";
+      row.setAttribute("data-legend-entry", entry.term);
+
+      const term = document.createElement("dt");
+      term.className = "legend__term";
+      if (entry.coast !== undefined) {
+        // The colour the continent's own coast wears on the board, so the
+        // sheet and the map answer the same question the same way.
+        const swatch = document.createElement("span");
+        swatch.className = "legend__swatch";
+        swatch.setAttribute("data-coast", String(entry.coast));
+        term.append(swatch);
+      }
+      term.append(entry.term);
+
+      const detail = document.createElement("dd");
+      detail.className = "legend__detail";
+      detail.textContent = entry.detail;
+
+      row.append(term, detail);
+      entries.append(row);
+    }
+    into.append(entries);
+  }
 }
 
 /** Rebuilds the line of dice under the map from the last thing that happened. */

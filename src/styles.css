@@ -70,20 +70,131 @@ body {
     max(0.75rem, env(safe-area-inset-bottom));
 }
 
-.board__title {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-align: center;
-}
-
 .board__game {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+/*
+ * The turn indicator. It holds the row the title used to have, because on a
+ * phone whose turn it is and what that turn still owes are worth more than the
+ * name of the game, which the tab already carries.
+ */
+.board__turn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* The player's name in the player's own colour: the same chip as the handover
+   panel, so one player is one colour wherever they appear. */
+.board__whose {
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: var(--land);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.board__whose[data-player="1"] { background: var(--player-1); }
+.board__whose[data-player="2"] { background: var(--player-2); }
+.board__whose[data-player="3"] { background: var(--player-3); }
+.board__whose[data-player="4"] { background: var(--player-4); }
+.board__whose[data-player="5"] { background: var(--player-5); }
+.board__whose[data-player="6"] { background: var(--player-6); }
+
+.board__doing {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+  color: var(--ink-dim);
+}
+
+.board__info {
+  /* A thumb target, round, and never smaller than this however tight the row. */
+  flex: none;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 0;
+  border-radius: 50%;
+  background: var(--land);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.board__info[aria-expanded="true"] {
+  background: var(--accent);
+  color: var(--sea);
+}
+
+/*
+ * The legend takes the map's place rather than floating over it: on a phone
+ * there is no room for both, and nothing on the board can be acted on while
+ * the sheet is being read.
+ */
+.board__legend {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.legend__title {
+  margin: 0.9rem 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.legend__entries {
+  margin: 0;
+}
+
+.legend__entry {
+  display: grid;
+  grid-template-columns: minmax(6rem, 40%) 1fr;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.legend__term {
+  margin: 0;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* The continent's coast colour, so the name on the sheet and the outline on
+   the board are recognisably the same continent. */
+.legend__swatch {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-inline-end: 0.4rem;
+  border-radius: 2px;
+  background: var(--ink-dim);
+}
+
+.legend__swatch[data-coast="1"] { background: var(--coast-1); }
+.legend__swatch[data-coast="2"] { background: var(--coast-2); }
+.legend__swatch[data-coast="3"] { background: var(--coast-3); }
+.legend__swatch[data-coast="4"] { background: var(--coast-4); }
+.legend__swatch[data-coast="5"] { background: var(--coast-5); }
+.legend__swatch[data-coast="6"] { background: var(--coast-6); }
+
+.legend__detail {
+  margin: 0;
+  color: var(--ink-dim);
 }
 
 .board__map {

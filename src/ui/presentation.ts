@@ -1,5 +1,12 @@
-import { lineIsHolding, LINE_MINIMUM_GARRISON } from "../domain/game";
-import { withinBomberReach } from "../domain/reach";
+import {
+  BOMBER_COST,
+  BOMBS_KILL_FROM,
+  lineIsHolding,
+  LINE_MINIMUM_GARRISON,
+  TURNS_TO_HARDEN,
+} from "../domain/game";
+import { BOMBER_REACH, withinBomberReach } from "../domain/reach";
+import { REINFORCEMENT_FLOOR, TERRITORIES_PER_ARMY } from "../domain/reinforcements";
 import { bordersEachOther } from "../domain/turn";
 import type { GameState, Holding, PlayerId } from "../domain/game";
 import type { TerritoryId } from "../domain/map";
@@ -69,8 +76,21 @@ export function describeOutcome(battle: BattleShown): string {
   return toll.length > 0 ? toll.join(", ") : "no losses";
 }
 
+/**
+ * Whose turn it is and what that turn still owes. It is on screen from the
+ * first tap to the last, so nothing else has to keep saying it.
+ */
+export interface TurnShown {
+  readonly player: PlayerId;
+  /** Position in turn order, from one: the colour the player wears. */
+  readonly playerNumber: number;
+  /** The phase, and what it is still waiting for: "Deploy · 3 to place". */
+  readonly doing: string;
+}
+
 export interface GamePresentation {
   readonly territories: readonly TerritoryPresentation[];
+  readonly turn: TurnShown;
   readonly status: string;
   readonly canEndPhase: boolean;
   readonly endPhaseLabel: string;
@@ -107,10 +127,104 @@ export function presentGame(
 
   return {
     territories,
+    turn: turnOf(state),
     status: note ?? selectionPrompt(state, selected) ?? statusOf(state),
     canEndPhase: state.winner === null && state.reinforcementsLeft === 0,
     endPhaseLabel: state.phase === "fortify" ? "End turn" : "End phase",
   };
+}
+
+/**
+ * Whose turn it is, for the indicator that carries it. It is read on its own
+ * during a handover, when there is no board to present.
+ */
+export function turnOf(state: GameState): TurnShown {
+  return {
+    player: state.currentPlayer,
+    playerNumber: playerNumberOf(state, state.currentPlayer),
+    doing: doingNow(state),
+  };
+}
+
+function doingNow(state: GameState): string {
+  if (state.winner !== null) return "Game over";
+
+  switch (state.phase) {
+    case "deploy":
+      return state.reinforcementsLeft > 0
+        ? `Deploy · ${state.reinforcementsLeft} to place`
+        : "Deploy · all placed";
+    case "attack":
+      return "Attack";
+    case "fortify":
+      return state.hasFortified ? "Fortify · spent" : "Fortify";
+  }
+}
+
+export interface LegendEntry {
+  readonly term: string;
+  readonly detail: string;
+  /**
+   * The continent this entry is about, numbered as the map lists them, so the
+   * sheet can show the very colour that continent's coast wears on the board.
+   * Absent on an entry that is about no particular ground.
+   */
+  readonly coast?: number;
+}
+
+export interface LegendSection {
+  readonly title: string;
+  readonly entries: readonly LegendEntry[];
+}
+
+/**
+ * The numbers a player has to know and cannot read off the board. Every one of
+ * them is taken from the rule that owns it, so the sheet cannot drift away
+ * from the game it describes; the continents are read from the board in play.
+ */
+export function legendOf(state: GameState): readonly LegendSection[] {
+  return [
+    {
+      title: "What a turn earns",
+      entries: [
+        {
+          term: "Territories held",
+          detail:
+            `1 army for every ${TERRITORIES_PER_ARMY} territories you hold, ` +
+            `and never fewer than ${REINFORCEMENT_FLOOR}.`,
+        },
+      ],
+    },
+    {
+      title: "Continents, held outright",
+      entries: state.map.continents.map((continent, index) => ({
+        term: continent.name,
+        detail: `+${continent.bonus} armies a turn`,
+        coast: index + 1,
+      })),
+    },
+    {
+      title: "What things cost",
+      entries: [
+        { term: "Army", detail: "1 reinforcement, placed on ground you already hold." },
+        {
+          term: "Bomber",
+          detail:
+            `${BOMBER_COST} reinforcements. It strikes up to ${BOMBER_REACH} borders ` +
+            `away or across one sea link, rolls one die per bomber and destroys an ` +
+            `army on a ${BOMBS_KILL_FROM} or better. It takes no ground and never ` +
+            `kills the last defender.`,
+        },
+        {
+          term: "Defensive line",
+          detail:
+            `Nothing, but the territory must keep ${LINE_MINIMUM_GARRISON} armies ` +
+            `standing, and the line only protects once ${TURNS_TO_HARDEN} of your ` +
+            `own turns have ended.`,
+        },
+      ],
+    },
+  ];
 }
 
 /**
@@ -202,17 +316,19 @@ function lineShown(holding: Holding, viewer: PlayerId): LineShown {
 function statusOf(state: GameState): string {
   if (state.winner !== null) return `${state.winner} holds the map and has won.`;
 
+  // Whose turn it is is on screen permanently, so the line that has to carry
+  // what just happened spends none of its room saying it again.
   switch (state.phase) {
     case "deploy":
       return state.reinforcementsLeft > 0
-        ? `${state.currentPlayer}: place ${armies(state.reinforcementsLeft)}.`
-        : `${state.currentPlayer}: all armies placed. End the phase.`;
+        ? `Place ${armies(state.reinforcementsLeft)}.`
+        : "All armies placed. End the phase.";
     case "attack":
-      return `${state.currentPlayer}: attack, or end the phase.`;
+      return "Attack, or end the phase.";
     case "fortify":
       return state.hasFortified
-        ? `${state.currentPlayer}: nothing more this turn. End the turn.`
-        : `${state.currentPlayer}: fortify once, or end the turn.`;
+        ? "Nothing more this turn. End the turn."
+        : "Fortify once, or end the turn.";
   }
 }
 

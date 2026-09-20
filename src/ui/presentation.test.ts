@@ -257,6 +257,12 @@ describe("the legend", () => {
     }
   });
 
+  it("marks each continent with the number its coast is coloured by", () => {
+    for (const [index, continent] of provingMap.continents.entries()) {
+      expect(about(continent.name).coast).toBe(index + 1);
+    }
+  });
+
   it("states the garrison a defensive line needs", () => {
     expect(about(/line/i).detail).toContain(String(LINE_MINIMUM_GARRISON));
   });
