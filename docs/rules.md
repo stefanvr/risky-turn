@@ -63,3 +63,68 @@ exist and a full game has been played.
 **The opening.** Territories are dealt at random and opening armies are spread
 automatically, so the first decision a player makes is several turns in.
 Deferred on 2026-09-20 for the same reason.
+
+## Rules of Risky Turn's own
+
+Two mechanics that are not Risk's. Both are decided; neither is implemented
+yet. They are written here in full because they are the first rules this game
+owns outright, and because they interlock: a defensive line makes a stack
+expensive to take by ground, and bombers are how a stack is reached without
+taking ground. Bomb a line's garrison below its threshold and the line
+collapses.
+
+### Bombers
+
+A bomber is a unit standing in a territory alongside armies. It projects force
+at range and takes no ground.
+
+- **Bought during deploy.** Spend reinforcements to build one bomber in a
+  territory you hold, instead of placing those armies.
+- **A bomber is not an army.** It never defends, never counts toward a
+  territory's strength, and never counts toward reinforcement income. Every
+  rule written in terms of armies ignores bombers entirely.
+- **Bombers are lost with the ground they stand on.** Conquering a territory
+  destroys the bombers in it; they are never captured.
+- **A bombing run is an attack-phase action.** Choose a territory of yours
+  holding bombers and a target in reach. Every bomber in that territory rolls
+  one die, and each 5 or 6 removes one enemy army. The defender does not roll
+  back and no bomber is ever lost to the run.
+- **Reach** is two borders or fewer, or one sea link. Sea links are edges that
+  only bombers may use; ground attacks and fortifies ignore them.
+- **A bombing run never takes a territory below one army.** This is what
+  "cannot conquer" means in play, and it keeps the guarantee that every
+  territory has an owner with something standing on it.
+- **Each bomber flies once per turn.** Without this a single bomber would grind
+  any territory down to one army in a single phase.
+
+### Defensive lines
+
+A defensive line is a territory dug in: slow to prepare, hard to take, and
+visible to opponents while it is being built.
+
+- **Declared during the fortify phase**, on one territory you hold with at
+  least five armies, and it consumes that turn's fortify. A player digs in or
+  manoeuvres, never both.
+- **It takes effect after one full round** — at the end of the declaring
+  player's *next* turn. Opponents therefore get exactly one round in which to
+  break a line they can see being built. Digging in is a commitment, not a
+  reflex.
+- **While it holds, the defender rolls three dice instead of two**, still
+  limited by the armies actually present.
+- **It collapses** if the garrison falls below five, or if the player attacks
+  out of that territory. A line is for holding ground, not for staging from.
+- A player may hold lines on several territories, but builds at most one per
+  turn.
+
+### What these cost the model
+
+`Holding` currently carries an owner and an army count; it will need bombers
+and a line's state as well. A line's state is not a flag but a countdown — it
+has to distinguish *declared* from *active*, and advance when the declaring
+player's turn ends — so the game state needs a notion of rounds it does not
+have today. Sea links are a second kind of edge, so the map gains a concept as
+well. This is the first change that reaches every layer at once.
+
+Open numbers, all PROVISIONAL until a full game has been played: what a bomber
+costs in reinforcements, whether reach is two borders, whether 5 and 6 are the
+faces that kill, and whether five armies is the right threshold for a line.
