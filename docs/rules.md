@@ -51,12 +51,15 @@ Tapping is the exception already argued: one tap-pair resolves one dice
 exchange, and pressing an attack home costs many taps. That cost is accepted,
 because the decision to roll again is the tension the genre runs on.
 
-## Still open
+## Deliberately deferred
 
-**Escalation.** Nothing forces a game to end. Income is near flat and the
-defender takes ties, so a dug-in position is cheap to hold and expensive to
-take. This is the largest gap between the rules as they stand and a game that
-finishes inside a phone session.
+**Escalation.** Nothing currently forces a game to end: income is near flat and
+the defender takes ties, so a dug-in position is cheap to hold and expensive to
+take. Deferred on 2026-09-20 in favour of bombers and defensive lines, which
+change the same arithmetic from the other side — one makes stacks reachable
+without taking ground, the other makes them worth building. Revisit once both
+exist and a full game has been played.
 
 **The opening.** Territories are dealt at random and opening armies are spread
 automatically, so the first decision a player makes is several turns in.
+Deferred on 2026-09-20 for the same reason.
