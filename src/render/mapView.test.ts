@@ -22,6 +22,7 @@ function board(
     selected: false,
     line: "none" as const,
     poised: null,
+    reach: null,
     ...overrides[territory.id],
   }));
 }

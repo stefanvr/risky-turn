@@ -1,4 +1,5 @@
 import { lineIsHolding, LINE_MINIMUM_GARRISON } from "../domain/game";
+import { withinBomberReach } from "../domain/reach";
 import type { GameState, Holding, PlayerId } from "../domain/game";
 import type { TerritoryId } from "../domain/map";
 
@@ -15,7 +16,15 @@ export interface TerritoryPresentation {
   readonly line: LineShown;
   /** Which force the next tap would strike with, while this cell is chosen. */
   readonly poised: Poised;
+  /**
+   * Whether an armed squadron could strike here, and `null` while none is
+   * armed. A bomber's range is not drawn on the map, so it is answered on the
+   * board itself at the moment the question is asked.
+   */
+  readonly reach: Reach;
 }
+
+export type Reach = "in" | "out" | null;
 
 export type Poised = "armies" | "bombers" | null;
 
@@ -90,6 +99,7 @@ export function presentGame(
       selected: territory.id === selected || territory.id === (armed ?? null),
       line: lineShown(holding, state.currentPlayer),
       poised: poisedOn(state, territory.id, selected, armed ?? null),
+      reach: reachFrom(state, territory.id, armed ?? null),
     };
   });
 
@@ -151,6 +161,17 @@ function poisedOn(
   if (state.phase !== "attack" || state.winner !== null) return null;
   if (territory === armed) return "bombers";
   return territory === selected ? "armies" : null;
+}
+
+/**
+ * What an armed squadron can strike. The ground it stands on is never out of
+ * reach: it is not a target, it is the cell that is acting, and veiling it
+ * would hide the squadron being asked about.
+ */
+function reachFrom(state: GameState, territory: TerritoryId, armed: TerritoryId | null): Reach {
+  if (armed === null) return null;
+  if (territory === armed) return "in";
+  return withinBomberReach(state.map, armed, territory) ? "in" : "out";
 }
 
 function lineShown(holding: Holding, viewer: PlayerId): LineShown {

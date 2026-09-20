@@ -229,6 +229,21 @@ body {
   pointer-events: none;
 }
 
+/*
+ * While a squadron is armed, ground it cannot strike sinks back towards the
+ * sea and the cells it can reach keep their colour. A bomber's range is two
+ * land borders or one sea link, and neither is drawn on the map, so this is
+ * the only place the question is answered.
+ */
+.territory[data-reach="out"] {
+  fill-opacity: 0.25;
+}
+
+.territory__name[data-reach="out"],
+.force[data-reach="out"] {
+  opacity: 0.3;
+}
+
 /* Touch leaves focus behind; only keyboard focus should be drawn. */
 .territory:focus {
   outline: none;

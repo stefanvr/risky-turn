@@ -30,6 +30,7 @@ export function createMapView(map: GameMap): MapView {
   element.setAttribute("aria-label", `${map.name} map`);
 
   const regions = new Map<TerritoryId, SVGElement>();
+  const names = new Map<TerritoryId, SVGElement>();
   const lines = new Map<TerritoryId, SVGElement>();
   const armies = new Map<TerritoryId, { group: SVGElement; count: SVGElement }>();
   const squadrons = new Map<TerritoryId, { group: SVGElement; count: SVGElement }>();
@@ -62,7 +63,9 @@ export function createMapView(map: GameMap): MapView {
     lines.set(territory.id, line);
     works.append(line);
 
-    labels.append(drawName(territory));
+    const name = drawName(territory);
+    names.set(territory.id, name);
+    labels.append(name);
 
     const army = drawForce(territory, "armies");
     armies.set(territory.id, army);
@@ -97,6 +100,11 @@ export function createMapView(map: GameMap): MapView {
         }
 
         region.setAttribute("data-player", String(shown.playerNumber));
+        // Everything drawn for a cell carries the same answer, so a veiled
+        // cell goes back as one thing rather than losing only its ground.
+        for (const part of [region, names.get(shown.id), army.group, squadron?.group]) {
+          part?.setAttribute("data-reach", shown.reach ?? "none");
+        }
         region.setAttribute("aria-pressed", String(shown.selected));
         region.setAttribute("data-poised", shown.poised ?? "none");
 
@@ -140,6 +148,7 @@ function drawName(territory: Territory): SVGElement {
   const centre = centreOf(territory.shape);
   const name = document.createElementNS(SVG_NS, "text");
   name.setAttribute("class", "territory__name");
+  name.setAttribute("data-name-for", territory.id);
   name.setAttribute("x", String(centre.x));
   name.setAttribute("y", String(centre.y + NAME_Y));
   name.setAttribute("text-anchor", "middle");
