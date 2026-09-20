@@ -94,6 +94,12 @@ export function withHolding(
   territory: TerritoryId,
   holding: Holding,
 ): GameState {
+  if (!state.holdings.has(territory)) {
+    // Every territory is held from the deal onwards, so a name the board does
+    // not know is a mistake in the caller. Setting it anyway would invent a
+    // territory that is on no map.
+    throw new Error(`no territory "${territory}" on this board`);
+  }
   const holdings = new Map(state.holdings);
   holdings.set(territory, manned(holding));
   return { ...state, holdings };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { attack, digIn, endPhase, fortify } from "./turn";
-import { lineIsHolding, LINE_MINIMUM_GARRISON } from "./game";
+import { lineIsHolding, withHolding, LINE_MINIMUM_GARRISON } from "./game";
 import { fixedDice } from "./dice";
 import { stateWhere } from "./testGames";
 import type { GameState, PlayerId } from "./game";
@@ -171,5 +171,20 @@ describe("how a line collapses", () => {
 
     expect(holding(state, "delta").owner).toBe("blue");
     expect(holding(state, "delta").line).toBeNull();
+  });
+});
+
+describe("a holding that is not on the board", () => {
+  it("is refused rather than invented", () => {
+    const state = stateWhere({ alfa: "red", bravo: "red", charlie: "red", delta: "blue", echo: "blue" });
+    expect(() =>
+      withHolding(state, "atlantis", {
+        owner: "red",
+        armies: 3,
+        line: null,
+        bombers: 0,
+        bombersFlown: false,
+      }),
+    ).toThrow(/atlantis/);
   });
 });
