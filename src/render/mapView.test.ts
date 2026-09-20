@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createMapView } from "./mapView";
-import { provingMap } from "../maps/proving";
+import { provingMap } from "../testing/provingMap";
 import type { TerritoryPresentation } from "../ui/presentation";
 
 const SVG_NS = "http://www.w3.org/2000/svg";

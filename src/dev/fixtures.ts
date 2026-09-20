@@ -41,8 +41,9 @@ export function fixtureNamed(
 }
 
 /**
- * The interlock: the opponent is dug in on Echo, across water that no army can
- * cross, and the player has a squadron on Alfa that can reach it anyway. Two
+ * The interlock: the opponent is dug in on Calder, half a world away from the
+ * player's squadron on Nale in the Oskan Deep — and one hop across open water,
+ * which is the only way anything of the player's reaches it this turn. Two
  * good rolls take the garrison under its threshold and the line falls.
  */
 function bombersAgainstALine(map: GameMap, players: readonly PlayerId[]): GameState {
@@ -50,14 +51,14 @@ function bombersAgainstALine(map: GameMap, players: readonly PlayerId[]): GameSt
   const opponent = players[1]!;
   const opened = newGame(map, players, seededRandom(42));
 
-  let staged = withHolding(opened, "alfa", {
+  let staged = withHolding(opened, "nale", {
     owner: player,
     armies: 3,
     line: null,
     bombers: 3,
     bombersFlown: false,
   });
-  staged = withHolding(staged, "echo", {
+  staged = withHolding(staged, "calder", {
     owner: opponent,
     armies: 6,
     line: { turnsUntilHolding: 0, revealed: true },
@@ -68,7 +69,7 @@ function bombersAgainstALine(map: GameMap, players: readonly PlayerId[]): GameSt
 }
 
 /**
- * The opponent holds a line on Bravo that has already been run into, so it is
+ * The opponent holds a line on Harrow that has already been run into, so it is
  * on the board and rolling three dice. The position a random deal would take
  * many turns to produce.
  */
@@ -76,7 +77,7 @@ function foundLine(map: GameMap, players: readonly PlayerId[]): GameState {
   const opponent = players[1]!;
   const opened = newGame(map, players, seededRandom(42));
 
-  return withHolding(opened, "bravo", {
+  return withHolding(opened, "harrow", {
     owner: opponent,
     armies: 8,
     line: { turnsUntilHolding: 0, revealed: true },

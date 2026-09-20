@@ -12,6 +12,29 @@ pnpm preview    # serve the production build
 `pnpm check` is the gate for every goal. It builds before it tests, because one
 of the tests reads the built bundle.
 
+## The world, and how to change it
+
+The board is `src/maps/world.ts`, and it is written rather than typed:
+`scripts/paint-world.py` holds the world as a painting, one character per
+lattice cell and one character per territory, and derives the rest. Borders
+are shared cell edges, so two territories cannot disagree about the coast
+between them.
+
+```sh
+python3 scripts/paint-world.py   # from the repository root
+pnpm check                       # decides whether what was painted is playable
+```
+
+`src/maps/world.test.ts` is what "playable" means: every territory reachable
+over land, every continent one piece, no two cells overlapping, and — measured
+from the SVG the renderer produces — every cell big enough for a thumb and big
+enough to hold its own name and forces. Editing `src/maps/world.ts` by hand
+works too, but the painting is where a change is cheap.
+
+`src/testing/provingMap.ts` is a five-territory board the rule tests are
+written against, small enough that a test can state a whole position in a line.
+It is never the board the game is played on.
+
 ## Reproducing a game
 
 The deal is random but seeded, and the seed comes from the address:
@@ -39,8 +62,8 @@ particular choice. A fixture places one directly:
 
 | fixture | position |
 |---|---|
-| `found-line` | The opponent holds a defensive line on Bravo, already discovered, garrisoned and rolling three dice. |
-| `bombers-vs-line` | The interlock: the opponent is dug in on Echo across water no army can cross, and a squadron of three sits on Alfa that can reach it anyway. |
+| `found-line` | The opponent holds a defensive line on Harrow, already discovered, garrisoned and rolling three dice. |
+| `bombers-vs-line` | The interlock: the opponent is dug in on Calder, and a squadron of three sits on Nale in the Oskan Deep — a march away around half the world, one hop across the water for a bomber. |
 
 Fixtures are built from `newGame` and adjusted through the same `withHolding`
 the rules use, so a fixture cannot reach a position the game itself could not,

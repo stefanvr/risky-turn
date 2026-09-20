@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { newGame } from "./setup";
 import { seededRandom } from "./random";
-import { provingMap } from "../maps/proving";
+import { provingMap } from "../testing/provingMap";
 import { territoriesOf } from "./game";
 
 describe("setting up a game", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { reinforcementsFor } from "./reinforcements";
-import { provingMap } from "../maps/proving";
+import { provingMap } from "../testing/provingMap";
 import { stateWhere } from "./testGames";
 import { validateMap } from "./map";
 import type { GameMap } from "./map";

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { validateMap } from "./map";
 import { withinBomberReach, BOMBER_REACH } from "./reach";
-import { provingMap } from "../maps/proving";
+import { provingMap } from "../testing/provingMap";
 import { attack, fortify } from "./turn";
 import { fixedDice } from "./dice";
 import { stateWhere } from "./testGames";

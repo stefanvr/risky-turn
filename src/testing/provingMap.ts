@@ -1,10 +1,10 @@
 import type { GameMap } from "../domain/map";
 
 /**
- * A deliberately tiny map that exists to prove the pipe from authored data to
- * a tappable region on screen. It is not the map the game is played on; see
- * PRODUCT.md, which settles one fixed hand-authored world map. Delete this
- * once that map exists.
+ * The board the tests are written against: five lettered territories, small
+ * enough that a test can state a whole position in a line and be read back as
+ * the board it is about. The game itself is played on `src/maps/world.ts`;
+ * nothing outside tests may use this one.
  *
  * Alfa and Echo are linked by sea: no army can cross between them, but a
  * bomber can. Every territory here happens to be within a bomber's overland

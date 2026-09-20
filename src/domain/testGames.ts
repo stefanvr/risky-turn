@@ -1,4 +1,4 @@
-import { provingMap } from "../maps/proving";
+import { provingMap } from "../testing/provingMap";
 import type { GameState, Holding, Phase, PlayerId } from "./game";
 import type { TerritoryId } from "./map";
 

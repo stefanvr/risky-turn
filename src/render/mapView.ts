@@ -188,8 +188,8 @@ interface ForceStyle {
 }
 
 const FORCES: Readonly<Record<"armies" | "bombers", ForceStyle>> = {
-  armies: { glyph: TANK, icon: "tank", y: 3.5, scale: 0.8 },
-  bombers: { glyph: BOMBER, icon: "bomber", y: 12, scale: 0.75 },
+  armies: { glyph: TANK, icon: "tank", y: 3, scale: 0.8 },
+  bombers: { glyph: BOMBER, icon: "bomber", y: 10, scale: 0.7 },
 };
 
 /** An icon and its count on one line: what a cell has, of one kind. */
