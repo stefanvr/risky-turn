@@ -118,12 +118,17 @@ visible to opponents while it is being built.
 
 ### What these cost the model
 
-`Holding` currently carries an owner and an army count; it will need bombers
-and a line's state as well. A line's state is not a flag but a countdown — it
-has to distinguish *declared* from *active*, and advance when the declaring
-player's turn ends — so the game state needs a notion of rounds it does not
-have today. Sea links are a second kind of edge, so the map gains a concept as
-well. This is the first change that reaches every layer at once.
+Lines are implemented. `Holding` carries a line alongside its owner and army
+count, and the line is a countdown of the holder's own remaining turns rather
+than a flag, which turned out to need no global notion of rounds: the count
+lives on the territory and is stepped when its holder's turn ends. The collapse
+rule lives in `withHolding`, so every path that can thin a garrison enforces it
+without having to remember to.
+
+Bombers still cost the map a concept. Sea links are a second kind of edge —
+reachable by bombers, ignored by ground attacks and fortifies — and the proving
+map has no water at all, so one will have to be added there before bombers can
+be exercised on it.
 
 Open numbers, all PROVISIONAL until a full game has been played: what a bomber
 costs in reinforcements, whether reach is two borders, whether 5 and 6 are the
