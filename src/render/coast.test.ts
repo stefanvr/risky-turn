@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { coastsOf } from "./coast";
+import { COAST_INSET, coastsOf } from "./coast";
 import { provingMap } from "../testing/provingMap";
 import { worldMap } from "../maps/world";
 import type { GameMap, Point } from "../domain/map";
@@ -64,6 +64,80 @@ describe("a continent's coast", () => {
             .map(([edge]) => edge);
           const drawn = drawnEdges(coastsOf(map).get(continent.id)!);
           expect(drawn.toSorted()).toEqual(outer.toSorted());
+        }
+      });
+    });
+  }
+});
+
+/** Whether a point lies strictly inside a shape, by ray casting. */
+function inside(point: Point, shape: readonly Point[]): boolean {
+  let within = false;
+  for (let i = 0, j = shape.length - 1; i < shape.length; j = i++) {
+    const here = shape[i]!;
+    const there = shape[j]!;
+    const straddles = here.y > point.y !== there.y > point.y;
+    const crossing =
+      ((there.x - here.x) * (point.y - here.y)) / (there.y - here.y) + here.x;
+    if (straddles && point.x < crossing) within = !within;
+  }
+  return within;
+}
+
+describe("where two continents meet", () => {
+  for (const map of [provingMap, worldMap]) {
+    describe(map.name, () => {
+      /*
+       * A border between two continents is one shared lattice edge, so two
+       * coasts drawn on it are the same line and only the one painted last is
+       * ever seen. Each is therefore pulled inside its own ground, far enough
+       * that both lie beside the border rather than on it.
+       */
+      it("gives each continent its own line, inside its own ground", () => {
+        const coasts = coastsOf(map, COAST_INSET);
+        const drawn = [...coasts].map(([continent, loops]) => ({
+          continent,
+          points: loops.flat(),
+        }));
+
+        for (const { continent, points } of drawn) {
+          const ground = map.territories.filter(
+            (territory) => territory.continent === continent,
+          );
+          for (const point of points) {
+            expect(
+              ground.some((territory) => inside(point, territory.shape)),
+              `${continent} draws ${point.x},${point.y} outside its own ground`,
+            ).toBe(true);
+          }
+        }
+
+        for (const one of drawn) {
+          for (const other of drawn) {
+            if (one.continent === other.continent) continue;
+            for (const point of one.points) {
+              const shared = other.points.some(
+                (candidate) => candidate.x === point.x && candidate.y === point.y,
+              );
+              expect(shared, `${one.continent} and ${other.continent} draw the same point`)
+                .toBe(false);
+            }
+          }
+        }
+      });
+
+      it("keeps the coast a line about the continent, not a line about a cell", () => {
+        // Pulled in by half its own stroke and no further: the line has to sit
+        // against the border it is about, not float in the middle of a cell.
+        const loops = coastsOf(map, COAST_INSET).get(map.continents[0]!.id)!;
+        const plain = coastsOf(map).get(map.continents[0]!.id)!;
+        for (const [index, loop] of loops.entries()) {
+          for (const [at, point] of loop.entries()) {
+            const was = plain[index]![at]!;
+            expect(Math.hypot(point.x - was.x, point.y - was.y)).toBeLessThanOrEqual(
+              COAST_INSET * 2,
+            );
+          }
         }
       });
     });

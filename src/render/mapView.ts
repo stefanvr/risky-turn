@@ -1,5 +1,5 @@
 import { centreOf, validateMap } from "../domain/map";
-import { coastsOf } from "./coast";
+import { COAST_INSET, coastsOf } from "./coast";
 import type { GameMap, Point, Territory, TerritoryId } from "../domain/map";
 import type { TerritoryPresentation } from "../ui/presentation";
 
@@ -311,7 +311,7 @@ function drawCoasts(map: GameMap): SVGElement {
   coasts.setAttribute("class", "map__coasts");
   coasts.setAttribute("aria-hidden", "true");
 
-  for (const [continent, loops] of coastsOf(map)) {
+  for (const [continent, loops] of coastsOf(map, COAST_INSET)) {
     const coast = document.createElementNS(SVG_NS, "path");
     coast.setAttribute("class", "continent__coast");
     coast.setAttribute("data-coast-for", continent);
