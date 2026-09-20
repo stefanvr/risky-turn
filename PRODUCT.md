@@ -40,6 +40,9 @@ they are declared. A round needs only a phone and a few minutes of attention.
   opponent and no network play: the game is passed from hand to hand. Because
   some of what a player knows is secret, ending a turn covers the board until
   the next player takes it up.
+- A control that belongs to one phase of a turn hides when its phase ends but
+  keeps its place on screen. The map is the same size in the same position for
+  the whole turn, so nothing a thumb is already reaching for moves under it.
 
 ## Where decided truth lives
 - which of Risk's rules are kept, changed or dropped -> docs/rules.md
