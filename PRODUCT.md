@@ -35,6 +35,7 @@ they are declared. A round needs only a phone and a few minutes of attention.
 - how many armies a turn grants -> src/domain/reinforcements.ts
 - how a battle is decided -> src/domain/combat.ts
 - published URL and asset base -> vite.config.ts, .github/workflows/deploy.yml
+- what a cell shows about its forces and its state -> src/ui/presentation.ts
 - palette and type tokens -> src/styles.css
 
 ## Deferred
