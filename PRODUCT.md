@@ -29,6 +29,7 @@ they are declared. A round needs only a phone and a few minutes of attention.
 
 ## Where decided truth lives
 - which of Risk's rules are kept, changed or dropped -> docs/rules.md
+- how to run it, reproduce a game, and reach fixtures -> docs/development.md
 - what a map must satisfy to be playable -> src/domain/map.ts
 - the rules of a turn, and what makes a move illegal -> src/domain/turn.ts
 - how many armies a turn grants -> src/domain/reinforcements.ts

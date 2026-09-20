@@ -1,5 +1,5 @@
 import { mountGame } from "./ui/game";
-import { newGame } from "./domain/setup";
+import { chooseStartingState } from "./ui/startup";
 import { diceFrom } from "./domain/dice";
 import { seededRandom } from "./domain/random";
 import { provingMap } from "./maps/proving";
@@ -8,8 +8,14 @@ import "./styles.css";
 const host = document.querySelector("#game");
 if (!host) throw new Error("page is missing its game element");
 
-// The only place a seed is drawn from the clock: everything below it is
-// reproducible from that number alone.
-const random = seededRandom(Date.now());
+const { state, seed } = chooseStartingState(window.location.search, {
+  map: provingMap,
+  players: ["Red", "Blue"],
+  // Constant-folded away in a production build, which drops the fixtures with it.
+  fixtures: import.meta.env.DEV
+    ? (await import("./dev/fixtures")).fixtureNamed
+    : undefined,
+  now: () => Date.now(),
+});
 
-mountGame(host, newGame(provingMap, ["Red", "Blue"], random), diceFrom(random));
+mountGame(host, state, diceFrom(seededRandom(seed + 1)));
