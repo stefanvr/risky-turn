@@ -38,21 +38,39 @@ It is never the board the game is played on.
 ## Seeing what a change looks like
 
 jsdom paints nothing, so a test can prove a mark is set and still say nothing
-about whether it carries. Take a picture instead:
+about whether it carries. Take a picture instead.
+
+The page, in a real browser, at the size a phone shows it:
+
+```sh
+pnpm shot /tmp/board.png
+pnpm shot /tmp/legend.png --at "?fixture=found-line&seed=4" \
+          --tap '[data-role="legend-open"]'
+```
+
+`scripts/board-shot.mjs` starts the development server itself, so seeds and
+fixtures work exactly as they do in `pnpm dev`, and `--tap` clicks its way to a
+state that takes a tap to reach — placing armies, arming a squadron, opening
+the legend. Everything outside the map is in the picture: the turn bar, the
+status line, the controls. It needs the browser Playwright installs
+(`pnpm exec playwright install chromium`, once).
+
+The map alone, without a browser:
 
 ```sh
 PICTURE_TO=/tmp/board.svg PICTURE_ARM=cairn pnpm vitest run src/dev/picture.test.ts
 # PICTURE_CHOOSE=cairn instead, to choose a cell without arming its squadron
-python3 scripts/board-picture.py /tmp/board.svg /tmp/board.png
+python3 scripts/board-picture.py /tmp/board.svg /tmp/board.png [scale]
 ```
 
 The first writes out the SVG the renderer actually produced, with a squadron
 chosen if `PICTURE_CHOOSE` names a territory, and its squadron armed if
-`PICTURE_ARM` does. The second draws it at the size a
-phone shows it — 366 by 560, the map's share of a 390px screen — reading the
-colours and opacities from `src/styles.css` rather than restating them.
+`PICTURE_ARM` does. The second draws it at the size a phone shows the map —
+366 by 560 — reading every colour and opacity from `src/styles.css` rather
+than restating them, and takes a scale factor for looking closely at a detail.
 Letterforms are a 3x5 grid rather than the browser's font, so it answers
-layout, contrast and whether a mark carries, not how type looks.
+layout, contrast and whether a mark carries, not how type looks. Reach for it
+when a browser is not available, or when a detail wants magnifying.
 
 ## Reproducing a game
 
