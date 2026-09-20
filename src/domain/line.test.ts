@@ -119,6 +119,25 @@ describe("what a line does", () => {
   });
 });
 
+describe("finding a line", () => {
+  it("is not known to anyone until something runs into it", () => {
+    const dug = digIn(garrisoned(), "delta");
+    expect(holding(dug, "delta").line?.revealed).toBe(false);
+  });
+
+  it("is known once an attack runs into it, and stays known", () => {
+    const hardened = afterOwnTurns(digIn(garrisoned(), "delta"), "red", 2);
+    const assault = asPlayer(hardened, "blue", "attack");
+    const after = attack(assault, "charlie", "delta", fixedDice([1, 6, 6, 6]));
+
+    expect(holding(after.state, "delta").owner).toBe("red");
+    expect(holding(after.state, "delta").line?.revealed).toBe(true);
+
+    const laterStill = afterOwnTurns(after.state, "red", 1);
+    expect(holding(laterStill, "delta").line?.revealed).toBe(true);
+  });
+});
+
 describe("how a line collapses", () => {
   it("falls when the garrison drops below a full one", () => {
     const hardened = afterOwnTurns(digIn(garrisoned(), "delta"), "red", 2);

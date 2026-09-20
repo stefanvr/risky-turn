@@ -23,7 +23,9 @@ they are declared. A round needs only a phone and a few minutes of attention.
   by conquest — and any rule that fights a short hot-seat session on a small
   screen is changed deliberately and recorded rather than inherited.
 - Players share one device and take turns in sequence. There is no computer
-  opponent and no network play: the game is passed from hand to hand.
+  opponent and no network play: the game is passed from hand to hand. Because
+  some of what a player knows is secret, ending a turn covers the board until
+  the next player takes it up.
 
 ## Where decided truth lives
 - which of Risk's rules are kept, changed or dropped -> docs/rules.md

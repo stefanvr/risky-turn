@@ -24,6 +24,7 @@ was made up on the spot for the same reason. Neither has been argued for.
 | One fortify per turn | `src/domain/turn.ts` | inherited |
 | Fortify travels any path through the player's own territory | `src/domain/turn.ts` | inherited (one of Risk's own variants) — rewards a connected empire, which pairs with continent bonuses |
 | A fortify moves all but one army | `src/ui/game.ts` | **deviation**, PROVISIONAL |
+| Ending a turn covers the board until the next player takes it up | `src/ui/game.ts` | **decided** — secret lines need a handover on a shared device |
 | Turn runs deploy, then attack, then fortify | `src/domain/game.ts` | inherited |
 | Every reinforcement must be placed before the phase ends | `src/domain/turn.ts` | inherited |
 | A player holding nothing is skipped | `src/domain/turn.ts` | inherited |
@@ -106,9 +107,13 @@ visible to opponents while it is being built.
   least five armies, and it consumes that turn's fortify. A player digs in or
   manoeuvres, never both.
 - **It takes effect after one full round** — at the end of the declaring
-  player's *next* turn. Opponents therefore get exactly one round in which to
-  break a line they can see being built. Digging in is a commitment, not a
-  reflex.
+  player's *next* turn. Because lines are secret, this is not a telegraph;
+  it is a commitment cost. A player cannot dig in reactively when they see an
+  attack coming, so entrenching is a bet placed a turn early.
+- **A line is secret.** The phone shows the works of whoever's turn it is and
+  nobody else's. An attack that runs into a line reveals it — the extra die is
+  visible in the exchange — and it stays on the board for every player from
+  then on.
 - **While it holds, the defender rolls three dice instead of two**, still
   limited by the armies actually present.
 - **It collapses** if the garrison falls below five, or if the player attacks

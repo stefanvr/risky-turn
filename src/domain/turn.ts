@@ -118,7 +118,12 @@ export function attack(
       line: null,
     });
   } else {
-    next = withHolding(next, to, { ...defender, armies: survivingDefenders });
+    // An attack that runs into works learns they are there.
+    next = withHolding(next, to, {
+      ...defender,
+      armies: survivingDefenders,
+      line: defender.line === null ? null : { ...defender.line, revealed: true },
+    });
   }
 
   return { state: declareWinnerIfAny(next), battle, conquered };
@@ -146,7 +151,7 @@ export function digIn(state: GameState, territory: TerritoryId): GameState {
   return {
     ...withHolding(state, territory, {
       ...holding,
-      line: { turnsUntilHolding: TURNS_TO_HARDEN },
+        line: { turnsUntilHolding: TURNS_TO_HARDEN, revealed: false },
     }),
     hasFortified: true,
   };
@@ -210,7 +215,7 @@ function hardenLinesOf(state: GameState, player: PlayerId): GameState {
     if (holding.line === null || holding.line.turnsUntilHolding === 0) continue;
     next = withHolding(next, territory, {
       ...holding,
-      line: { turnsUntilHolding: holding.line.turnsUntilHolding - 1 },
+      line: { ...holding.line, turnsUntilHolding: holding.line.turnsUntilHolding - 1 },
     });
   }
   return next;

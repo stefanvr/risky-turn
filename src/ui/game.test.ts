@@ -154,6 +154,74 @@ describe("digging in", () => {
   });
 });
 
+describe("passing the phone", () => {
+  const handoverButton = () =>
+    host.querySelector<HTMLButtonElement>('[data-role="handover"]')!;
+  const mapHidden = () => host.querySelector<HTMLElement>(".board__map")!.hidden;
+
+  it("covers the board when a turn ends", () => {
+    mountGame(host, stateWhere(board, { phase: "fortify" }), fixedDice([1]));
+    endPhaseButton().click();
+    expect(handoverButton().hidden).toBe(false);
+    expect(mapHidden()).toBe(true);
+    expect(handoverButton().textContent).toMatch(/blue/i);
+  });
+
+  it("uncovers it when the next player takes it up", () => {
+    mountGame(host, stateWhere(board, { phase: "fortify" }), fixedDice([1]));
+    endPhaseButton().click();
+    handoverButton().click();
+    expect(handoverButton().hidden).toBe(true);
+    expect(mapHidden()).toBe(false);
+    expect(status()).toMatch(/blue/i);
+  });
+
+  it("does not cover the board merely because a phase ended", () => {
+    mountGame(host, stateWhere(board, { reinforcementsLeft: 0 }), fixedDice([1]));
+    endPhaseButton().click();
+    expect(handoverButton().hidden).toBe(true);
+    expect(mapHidden()).toBe(false);
+  });
+
+  it("does not ask for a handover once the game is won", () => {
+    const won = stateWhere(
+      { alfa: "red", bravo: "red", charlie: "red", delta: "red", echo: "red" },
+      { phase: "fortify" },
+    );
+    mountGame(host, { ...won, winner: "red" }, fixedDice([1]));
+    expect(handoverButton().hidden).toBe(true);
+  });
+});
+
+describe("showing an exchange", () => {
+  const battleLine = () => host.querySelector('[data-role="battle"]') as HTMLElement;
+
+  it("shows both sides' dice and what each lost", () => {
+    const ready = stateWhere(board, {
+      phase: "attack",
+      armies: { alfa: 4, bravo: 3, charlie: 3, delta: 2, echo: 1 },
+    });
+    mountGame(host, ready, fixedDice([6, 5, 4, 1, 1]));
+    tap("alfa");
+    tap("bravo");
+
+    const faces = [...battleLine().querySelectorAll("[data-die]")].map(
+      (die) => die.getAttribute("data-die"),
+    );
+
+    expect(battleLine().hidden).toBe(false);
+    expect(battleLine().textContent).toMatch(/red/i);
+    expect(battleLine().textContent).toMatch(/blue/i);
+    expect(faces).toEqual(["6", "5", "4", "1", "1"]);
+    expect(battleLine().textContent).toMatch(/lost 2 armies/i);
+  });
+
+  it("shows nothing before a shot is fired", () => {
+    mountGame(host, stateWhere(board, { phase: "attack" }), fixedDice([1]));
+    expect(battleLine().hidden).toBe(true);
+  });
+});
+
 describe("moving through the turn", () => {
   it("runs deploy, attack, fortify, then hands over to the next player", () => {
     mountGame(host, stateWhere(board, { reinforcementsLeft: 0 }), fixedDice([1]));
@@ -163,6 +231,7 @@ describe("moving through the turn", () => {
     endPhaseButton().click();
     expect(status()).toMatch(/fortif/i);
     endPhaseButton().click();
+    host.querySelector<HTMLButtonElement>('[data-role="handover"]')!.click();
     expect(status()).toMatch(/blue/i);
   });
 

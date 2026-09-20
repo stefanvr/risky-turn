@@ -16,6 +16,30 @@ export interface TerritoryPresentation {
 
 export type LineShown = "none" | "building" | "holding";
 
+export interface BattleShown {
+  readonly attacker: PlayerId;
+  readonly defender: PlayerId;
+  readonly attackerDice: readonly number[];
+  readonly defenderDice: readonly number[];
+  readonly attackerLosses: number;
+  readonly defenderLosses: number;
+  readonly conquered: boolean;
+}
+
+/**
+ * What an exchange cost, in words. The dice themselves are drawn by the view;
+ * this is the sentence beside them.
+ */
+export function describeOutcome(battle: BattleShown): string {
+  const toll = [
+    battle.attackerLosses > 0 ? `${battle.attacker} lost ${armies(battle.attackerLosses)}` : null,
+    battle.defenderLosses > 0 ? `${battle.defender} lost ${armies(battle.defenderLosses)}` : null,
+  ].filter((part) => part !== null);
+
+  if (battle.conquered) return `${battle.defender} is driven out`;
+  return toll.length > 0 ? toll.join(", ") : "no losses";
+}
+
 export interface GamePresentation {
   readonly territories: readonly TerritoryPresentation[];
   readonly status: string;
@@ -44,7 +68,7 @@ export function presentGame(
       playerNumber: numbers.get(holding.owner) ?? 0,
       armies: holding.armies,
       selected: territory.id === selected,
-      line: lineShown(holding),
+      line: lineShown(holding, state.currentPlayer),
     };
   });
 
@@ -75,8 +99,14 @@ function selectionPrompt(state: GameState, selected: TerritoryId | null): string
     : `${name} selected. Tap where to move its armies.`;
 }
 
-function lineShown(holding: Holding): LineShown {
+/**
+ * Lines are secret. The phone shows the works of whoever's turn it is, and an
+ * opponent's only once an attack has run into them — after which they stay on
+ * the board for good.
+ */
+function lineShown(holding: Holding, viewer: PlayerId): LineShown {
   if (holding.line === null) return "none";
+  if (holding.owner !== viewer && !holding.line.revealed) return "none";
   return lineIsHolding(holding) ? "holding" : "building";
 }
 

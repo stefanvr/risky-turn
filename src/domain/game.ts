@@ -14,6 +14,8 @@ export const PHASE_ORDER: readonly Phase[] = ["deploy", "attack", "fortify"];
  */
 export interface DefensiveLine {
   readonly turnsUntilHolding: number;
+  /** Set once an attack has run into it. Known lines stay known. */
+  readonly revealed: boolean;
 }
 
 export interface Holding {

@@ -29,6 +29,24 @@ describe("what the board shows", () => {
     expect(shown.find((t) => t.id === "alfa")?.line).toBe("none");
   });
 
+  it("keeps an opponent's line off the board until it is found", () => {
+    const state = stateWhere(board, {
+      armies: { bravo: 6 },
+      lines: { bravo: 0 },
+      currentPlayer: "red",
+    });
+    expect(presentGame(state, null).territories.find((t) => t.id === "bravo")?.line).toBe("none");
+  });
+
+  it("shows an opponent's line once an attack has found it", () => {
+    const state = stateWhere(board, {
+      armies: { bravo: 6 },
+      lines: { bravo: { turns: 0, revealed: true } },
+      currentPlayer: "red",
+    });
+    expect(presentGame(state, null).territories.find((t) => t.id === "bravo")?.line).toBe("holding");
+  });
+
   it("marks the selected territory and only that one", () => {
     const state = stateWhere(board);
     const shown = presentGame(state, "delta").territories;

@@ -7,7 +7,7 @@ export interface BoardOverrides {
   readonly currentPlayer?: PlayerId;
   readonly phase?: Phase;
   readonly armies?: Readonly<Record<string, number>>;
-  readonly lines?: Readonly<Record<string, number>>;
+  readonly lines?: Readonly<Record<string, number | { turns: number; revealed: boolean }>>;
   readonly reinforcementsLeft?: number;
   readonly hasFortified?: boolean;
 }
@@ -27,11 +27,16 @@ export function stateWhere(
     if (owner === undefined) {
       throw new Error(`stateWhere: no owner given for ${territory.id}`);
     }
-    const turnsUntilHolding = overrides.lines?.[territory.id];
+    const declared = overrides.lines?.[territory.id];
     holdings.set(territory.id, {
       owner,
       armies: overrides.armies?.[territory.id] ?? 1,
-      line: turnsUntilHolding === undefined ? null : { turnsUntilHolding },
+      line:
+        declared === undefined
+          ? null
+          : typeof declared === "number"
+            ? { turnsUntilHolding: declared, revealed: false }
+            : { turnsUntilHolding: declared.turns, revealed: declared.revealed },
     });
   }
 
