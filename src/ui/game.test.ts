@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { mountGame } from "./game";
 import { fixedDice } from "../domain/dice";
 import { stateWhere } from "../domain/testGames";
+import { provingMap } from "../testing/provingMap";
 
 const board = { alfa: "red", bravo: "blue", charlie: "blue", delta: "red", echo: "red" } as const;
 
@@ -323,7 +324,7 @@ describe("moving through the turn", () => {
     expect(status()).toMatch(/fortif/i);
     endPhaseButton().click();
     host.querySelector<HTMLButtonElement>('[data-role="handover"]')!.click();
-    expect(status()).toMatch(/blue/i);
+    expect(status()).toMatch(/deploy|place/i);
   });
 
   it("stops accepting taps once the game is won", () => {
@@ -373,5 +374,82 @@ describe("arming a squadron", () => {
     for (const territory of Object.keys(armed)) {
       expect(reachOf(territory), `${territory} stayed marked`).toBe("none");
     }
+  });
+});
+
+describe("the turn indicator", () => {
+  const bar = (): HTMLElement => {
+    const found = host.querySelector<HTMLElement>('[data-role="turn"]');
+    if (!found) throw new Error("no turn indicator");
+    return found;
+  };
+
+  it("names the player whose turn it is, in their own colour, and what phase it is", () => {
+    mountGame(host, stateWhere(board, { reinforcementsLeft: 3 }), fixedDice([1]));
+    expect(bar().textContent).toMatch(/red/i);
+    expect(bar().textContent).toMatch(/deploy/i);
+    expect(bar().querySelector("[data-player]")?.getAttribute("data-player")).toBe("1");
+  });
+
+  it("keeps the armies still in hand in view, whatever the status line is saying", () => {
+    mountGame(host, stateWhere(board, { reinforcementsLeft: 5, armies: { alfa: 1 } }), fixedDice([1]));
+    host.querySelector<HTMLButtonElement>('[data-role="build-bomber"]')!.click();
+    tap("alfa");
+
+    // Stationing a bomber is worth saying, but it must not be said in the one
+    // place that was answering how many armies are left to place.
+    expect(status()).toMatch(/bomber/i);
+    expect(bar().textContent).toMatch(/\b2\b/);
+  });
+
+  it("follows the turn to the player who takes the phone up", () => {
+    mountGame(host, stateWhere(board, { reinforcementsLeft: 0 }), fixedDice([1]));
+    endPhaseButton().click();
+    endPhaseButton().click();
+    endPhaseButton().click();
+    host.querySelector<HTMLButtonElement>('[data-role="handover"]')!.click();
+    expect(bar().textContent).toMatch(/blue/i);
+    expect(bar().querySelector("[data-player]")?.getAttribute("data-player")).toBe("2");
+  });
+});
+
+describe("the legend", () => {
+  const info = () => host.querySelector<HTMLButtonElement>('[data-role="legend-open"]')!;
+  const panel = () => host.querySelector<HTMLElement>('[data-role="legend"]')!;
+
+  it("is closed until the info control is pressed, and closes again after it", () => {
+    mountGame(host, stateWhere(board), fixedDice([1]));
+    expect(panel().hidden).toBe(true);
+    expect(info().getAttribute("aria-expanded")).toBe("false");
+
+    info().click();
+    expect(panel().hidden).toBe(false);
+    expect(info().getAttribute("aria-expanded")).toBe("true");
+
+    info().click();
+    expect(panel().hidden).toBe(true);
+  });
+
+  it("says what things cost, what a turn earns, and what every continent pays", () => {
+    mountGame(host, stateWhere(board), fixedDice([1]));
+    info().click();
+    const rows = [...panel().querySelectorAll("[data-legend-entry]")].map(
+      (row) => row.textContent ?? "",
+    );
+
+    expect(rows.some((row) => /bomber/i.test(row) && row.includes("3"))).toBe(true);
+    for (const continent of provingMap.continents) {
+      expect(rows.some((row) => row.includes(continent.name) && row.includes(`${continent.bonus}`)))
+        .toBe(true);
+    }
+  });
+
+  it("does not cover the board while the phone is being handed over", () => {
+    mountGame(host, stateWhere(board, { reinforcementsLeft: 0 }), fixedDice([1]));
+    info().click();
+    endPhaseButton().click();
+    endPhaseButton().click();
+    endPhaseButton().click();
+    expect(panel().hidden).toBe(true);
   });
 });

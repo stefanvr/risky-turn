@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createMapView } from "./mapView";
 import { provingMap } from "../testing/provingMap";
+import { worldMap } from "../maps/world";
 import type { TerritoryPresentation } from "../ui/presentation";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -254,3 +255,64 @@ describe("continents on the board", () => {
     expect(stylesheet).toMatch(/\.continent__coast\s*\{[^}]+\}/);
   });
 });
+
+describe("the colour of a coast", () => {
+  const sheet = readFileSync(join(process.cwd(), "src", "styles.css"), "utf8");
+
+  it("marks each coast with its continent's number, so one continent wears one colour", () => {
+    const view = createMapView(worldMap);
+    const drawn = [...view.element.querySelectorAll("[data-coast-for]")];
+    expect(drawn.map((path) => path.getAttribute("data-coast")).toSorted()).toEqual(
+      worldMap.continents.map((_, index) => String(index + 1)).toSorted(),
+    );
+  });
+
+  it("gives every continent a coast colour, none of them the colour a border wears", () => {
+    const coasts = worldMap.continents.map((_, index) =>
+      colourOf(sheet, `.continent__coast[data-coast="${index + 1}"]`, "stroke"),
+    );
+    const border = resolve(sheet, "var(--border)");
+
+    // Six coasts that a player has to tell apart at a glance, on ground that
+    // is already coloured: string inequality is not the test, distance is.
+    for (const [one, other] of pairsOf([...coasts, border])) {
+      expect(apart(one, other), `${one} and ${other} are too close to tell apart`)
+        .toBeGreaterThan(60);
+    }
+  });
+});
+
+/** The colour a rule actually paints, resolved through the sheet's own tokens. */
+function colourOf(sheet: string, selector: string, property: string): string {
+  const rule = new RegExp(
+    `${selector.replace(/[.[\]"]/g, "\\$&")}\\s*\\{([^}]*)\\}`,
+  ).exec(sheet);
+  if (!rule) throw new Error(`no rule for ${selector}`);
+  const declared = new RegExp(`(?:^|;)\\s*${property}:\\s*([^;]+)`).exec(rule[1]!);
+  if (!declared) throw new Error(`${selector} sets no ${property}`);
+  return resolve(sheet, declared[1]!.trim());
+}
+
+function resolve(sheet: string, value: string): string {
+  const reference = /^var\((--[\w-]+)\)$/.exec(value);
+  if (!reference) return value;
+  const token = new RegExp(`${reference[1]}:\\s*([^;]+);`).exec(sheet);
+  if (!token) throw new Error(`no token ${reference[1]}`);
+  return resolve(sheet, token[1]!.trim());
+}
+
+function apart(one: string, other: string): number {
+  const [a, b] = [rgbOf(one), rgbOf(other)];
+  return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+}
+
+function rgbOf(colour: string): [number, number, number] {
+  const hex = /^#([0-9a-f]{6})$/i.exec(colour);
+  if (!hex) throw new Error(`not a hex colour: ${colour}`);
+  const value = Number.parseInt(hex[1]!, 16);
+  return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
+}
+
+function pairsOf<T>(items: readonly T[]): [T, T][] {
+  return items.flatMap((one, index) => items.slice(index + 1).map((other): [T, T] => [one, other]));
+}

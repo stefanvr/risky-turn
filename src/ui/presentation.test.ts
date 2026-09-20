@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { presentGame } from "./presentation";
+import { legendOf, presentGame } from "./presentation";
 import { stateWhere } from "../domain/testGames";
 import { worldMap } from "../maps/world";
 import { newGame } from "../domain/setup";
 import { seededRandom } from "../domain/random";
-import { withHolding } from "../domain/game";
+import { BOMBER_COST, LINE_MINIMUM_GARRISON, withHolding } from "../domain/game";
+import { REINFORCEMENT_FLOOR, TERRITORIES_PER_ARMY } from "../domain/reinforcements";
+import { provingMap } from "../testing/provingMap";
 import { attack, bomb, IllegalMoveError } from "../domain/turn";
 import { fixedDice } from "../domain/dice";
 import type { GameState } from "../domain/game";
@@ -87,10 +89,12 @@ describe("what the board shows", () => {
 });
 
 describe("what the status line says", () => {
-  it("names the player and the armies still to place while deploying", () => {
+  it("counts the armies still to place, and leaves whose turn it is to the turn bar", () => {
     const state = stateWhere(board, { reinforcementsLeft: 3 });
-    expect(presentGame(state, null).status).toMatch(/red/i);
     expect(presentGame(state, null).status).toMatch(/3/);
+    // The player's name is on screen permanently now; repeating it in the one
+    // line that has to carry what just happened only spends room.
+    expect(presentGame(state, null).status).not.toMatch(/red/i);
   });
 
   it("names the phase being played", () => {
@@ -224,5 +228,36 @@ describe("what a poised force shows", () => {
     const fortifying = { ...onTheWorld("cairn", 0), phase: "fortify" as const };
     const moving = presentGame(fortifying, "cairn").territories;
     expect(moving.map((t) => t.reach)).toEqual(moving.map(() => null));
+  });
+});
+
+describe("the legend", () => {
+  const entries = () => legendOf(stateWhere(board)).flatMap((section) => section.entries);
+  const about = (term: RegExp | string) => {
+    const found = entries().find((entry) =>
+      typeof term === "string" ? entry.term.includes(term) : term.test(entry.term),
+    );
+    if (!found) throw new Error(`the legend says nothing about ${term}`);
+    return found;
+  };
+
+  it("takes a bomber's price from the rule that charges it", () => {
+    expect(about(/bomber/i).detail).toContain(String(BOMBER_COST));
+  });
+
+  it("states what a turn earns, floor and all, from the rule that pays it", () => {
+    const earned = about(/territor|cell/i).detail;
+    expect(earned).toContain(String(TERRITORIES_PER_ARMY));
+    expect(earned).toContain(String(REINFORCEMENT_FLOOR));
+  });
+
+  it("lists every continent on the board with the bonus that board gives it", () => {
+    for (const continent of provingMap.continents) {
+      expect(about(continent.name).detail).toContain(`+${continent.bonus}`);
+    }
+  });
+
+  it("states the garrison a defensive line needs", () => {
+    expect(about(/line/i).detail).toContain(String(LINE_MINIMUM_GARRISON));
   });
 });
