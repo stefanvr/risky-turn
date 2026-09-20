@@ -35,6 +35,23 @@ works too, but the painting is where a change is cheap.
 written against, small enough that a test can state a whole position in a line.
 It is never the board the game is played on.
 
+## Seeing what a change looks like
+
+jsdom paints nothing, so a test can prove a mark is set and still say nothing
+about whether it carries. Take a picture instead:
+
+```sh
+PICTURE_TO=/tmp/board.svg PICTURE_ARM=cairn pnpm vitest run src/dev/picture.test.ts
+python3 scripts/board-picture.py /tmp/board.svg /tmp/board.png
+```
+
+The first writes out the SVG the renderer actually produced, with a squadron
+armed if `PICTURE_ARM` names a territory. The second draws it at the size a
+phone shows it — 366 by 560, the map's share of a 390px screen — reading the
+colours and opacities from `src/styles.css` rather than restating them.
+Letterforms are a 3x5 grid rather than the browser's font, so it answers
+layout, contrast and whether a mark carries, not how type looks.
+
 ## Reproducing a game
 
 The deal is random but seeded, and the seed comes from the address:
