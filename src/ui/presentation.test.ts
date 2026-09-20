@@ -47,6 +47,31 @@ describe("what the board shows", () => {
     expect(presentGame(state, null).territories.find((t) => t.id === "bravo")?.line).toBe("holding");
   });
 
+  it("poises a selected cell on its armies while attacking", () => {
+    const state = stateWhere(board, { phase: "attack", armies: { alfa: 3 } });
+    const shown = presentGame(state, "alfa", undefined, null).territories;
+    expect(shown.find((t) => t.id === "alfa")?.poised).toBe("armies");
+    expect(shown.find((t) => t.id === "delta")?.poised).toBeNull();
+  });
+
+  it("poises an armed cell on its bombers instead", () => {
+    const state = stateWhere(board, { phase: "attack", bombers: { alfa: 2 } });
+    const shown = presentGame(state, null, undefined, "alfa").territories;
+    expect(shown.find((t) => t.id === "alfa")?.poised).toBe("bombers");
+  });
+
+  it("keeps the outline on a cell whose squadron is armed", () => {
+    const state = stateWhere(board, { phase: "attack", bombers: { alfa: 2 } });
+    const shown = presentGame(state, null, undefined, "alfa").territories;
+    expect(shown.filter((t) => t.selected).map((t) => t.id)).toEqual(["alfa"]);
+  });
+
+  it("poises nothing outside the attack phase", () => {
+    const state = stateWhere(board, { phase: "fortify", armies: { alfa: 6 } });
+    const shown = presentGame(state, "alfa", undefined, null).territories;
+    expect(shown.find((t) => t.id === "alfa")?.poised).toBeNull();
+  });
+
   it("marks the selected territory and only that one", () => {
     const state = stateWhere(board);
     const shown = presentGame(state, "delta").territories;

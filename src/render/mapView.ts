@@ -4,6 +4,8 @@ import type { TerritoryPresentation } from "../ui/presentation";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
+let viewsMade = 0;
+
 export interface MapView {
   readonly element: SVGSVGElement;
   /** Draws what it is given. Decides nothing. */
@@ -31,6 +33,14 @@ export function createMapView(map: GameMap): MapView {
   const counts = new Map<TerritoryId, SVGElement>();
   const lines = new Map<TerritoryId, SVGElement>();
   const squadrons = new Map<TerritoryId, { group: SVGElement; count: SVGElement }>();
+  const marks = new Map<TerritoryId, SVGElement>();
+
+  // Unique per view, so two maps on one page cannot claim each other's clips.
+  const scope = `map${(viewsMade += 1)}`;
+  const shapes = document.createElementNS(SVG_NS, "defs");
+  const selections = document.createElementNS(SVG_NS, "g");
+  selections.setAttribute("class", "map__selection");
+  selections.setAttribute("aria-hidden", "true");
   const works = document.createElementNS(SVG_NS, "g");
   works.setAttribute("class", "map__lines");
   works.setAttribute("aria-hidden", "true");
@@ -42,6 +52,11 @@ export function createMapView(map: GameMap): MapView {
     const region = drawRegion(territory);
     regions.set(territory.id, region);
     element.append(region);
+
+    shapes.append(clipOf(territory, scope));
+    const mark = drawSelection(territory, scope);
+    marks.set(territory.id, mark);
+    selections.append(mark);
 
     const line = drawLine(territory);
     lines.set(territory.id, line);
@@ -57,7 +72,7 @@ export function createMapView(map: GameMap): MapView {
   }
   // Painted after the regions: SVG has no z-index, so anything drawn before
   // them is simply covered by opaque ground.
-  element.append(drawSeaLinks(map), works, labels);
+  element.append(shapes, drawSeaLinks(map), works, selections, labels);
 
   return {
     element,
@@ -76,17 +91,23 @@ export function createMapView(map: GameMap): MapView {
           squadron.group.setAttribute("data-bombers-for", shown.id);
           squadron.group.setAttribute("data-bombers", String(shown.bombers));
           squadron.group.style.display = shown.bombers > 0 ? "" : "none";
+          squadron.group.setAttribute("data-poised", shown.poised ?? "none");
           squadron.count.textContent = String(shown.bombers);
         }
 
         region.setAttribute("data-player", String(shown.playerNumber));
         region.setAttribute("aria-pressed", String(shown.selected));
+        region.setAttribute("data-poised", shown.poised ?? "none");
+
+        const mark = marks.get(shown.id);
+        if (mark) mark.style.display = shown.selected ? "" : "none";
         region.setAttribute(
           "aria-label",
           `${shown.name}, held by ${shown.owner}, ${armiesInWords(shown.armies)}` +
             `${bombersInWords(shown.bombers)}${lineInWords(shown.line)}`,
         );
         count.textContent = String(shown.armies);
+        count.setAttribute("data-poised", shown.poised ?? "none");
       }
     },
 
@@ -190,6 +211,36 @@ function drawSquadron(territory: Territory): { group: SVGElement; count: SVGElem
 
   group.append(wing, count);
   return { group, count };
+}
+
+const clipIdOf = (territory: Territory, scope: string) => `${scope}-clip-${territory.id}`;
+
+function clipOf(territory: Territory, scope: string): SVGElement {
+  const clip = document.createElementNS(SVG_NS, "clipPath");
+  clip.setAttribute("id", clipIdOf(territory, scope));
+  clip.append(polygonOf(territory.shape));
+  return clip;
+}
+
+/**
+ * The selection outline, drawn after every cell and clipped to its own, so the
+ * half of the stroke that would fall outside is cut away rather than painted
+ * over by whichever neighbour happens to be drawn later. The visible mark
+ * therefore lies inside the cell it marks.
+ */
+function drawSelection(territory: Territory, scope: string): SVGElement {
+  const mark = polygonOf(territory.shape);
+  mark.setAttribute("class", "cell__selection");
+  mark.setAttribute("data-selected-for", territory.id);
+  mark.setAttribute("clip-path", `url(#${clipIdOf(territory, scope)})`);
+  mark.style.display = "none";
+  return mark;
+}
+
+function polygonOf(shape: readonly Point[]): SVGPolygonElement {
+  const polygon = document.createElementNS(SVG_NS, "polygon");
+  polygon.setAttribute("points", shape.map((point) => `${point.x},${point.y}`).join(" "));
+  return polygon;
 }
 
 /** Water, drawn as the dashed run a bomber can cross and an army cannot. */

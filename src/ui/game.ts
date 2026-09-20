@@ -84,7 +84,7 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
       return;
     }
 
-    const shown = presentGame(state, selected, note);
+    const shown = presentGame(state, selected, note, bombingFrom);
     view.show(shown.territories);
     status.textContent = buyingBomber
       ? `Tap one of your territories to station a bomber there.`

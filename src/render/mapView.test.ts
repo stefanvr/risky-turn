@@ -21,6 +21,7 @@ function board(
     bombers: 0,
     selected: false,
     line: "none" as const,
+    poised: null,
     ...overrides[territory.id],
   }));
 }
@@ -96,6 +97,55 @@ describe("map view", () => {
     const view = createMapView(provingMap);
     expect(view.element.querySelectorAll("[data-sea-link]")).toHaveLength(1);
     expect(view.element.querySelector("[data-sea-link]")?.getAttribute("data-sea-link")).toBe("alfa~echo");
+  });
+
+  it("draws the selection after every cell, so no neighbour paints over it", () => {
+    const view = createMapView(provingMap);
+    const children = [...view.element.children];
+    const lastCell = children.findLastIndex((child) => child.hasAttribute("data-territory"));
+    const selections = children.findIndex((child) => child.classList.contains("map__selection"));
+    expect(selections).toBeGreaterThan(lastCell);
+  });
+
+  it("clips each selection to the cell it marks, so it cannot bleed outwards", () => {
+    const view = createMapView(provingMap);
+    const mark = view.element.querySelector('[data-selected-for="charlie"]');
+    const clip = mark?.getAttribute("clip-path")?.match(/^url\(#(.+)\)$/)?.[1];
+    expect(clip).toBeTruthy();
+    expect(view.element.querySelector(`clipPath#${clip}`)).not.toBeNull();
+  });
+
+  it("shows the mark on the selected cell and nowhere else", () => {
+    const view = createMapView(provingMap);
+    const shownFor = () =>
+      [...view.element.querySelectorAll<SVGElement>("[data-selected-for]")]
+        .filter((mark) => mark.style.display !== "none")
+        .map((mark) => mark.getAttribute("data-selected-for"));
+
+    view.show(board({ charlie: { selected: true } }));
+    expect(shownFor()).toEqual(["charlie"]);
+
+    view.show(board());
+    expect(shownFor()).toEqual([]);
+  });
+
+  it("accents whichever force the cell would strike with", () => {
+    const view = createMapView(provingMap);
+    view.show(board({ alfa: { poised: "armies" }, bravo: { poised: "bombers", bombers: 2 } }));
+
+    const armiesOf = (id: string) =>
+      view.element.querySelector(`[data-armies="${id}"]`)?.getAttribute("data-poised");
+    const bombersOf = (id: string) =>
+      view.element.querySelector(`[data-bombers-for="${id}"]`)?.getAttribute("data-poised");
+
+    // The mark is carried by the numbers themselves, so one cell being poised
+    // cannot light up the others.
+    expect(armiesOf("alfa")).toBe("armies");
+    expect(bombersOf("alfa")).toBe("armies");
+    expect(armiesOf("bravo")).toBe("bombers");
+    expect(bombersOf("bravo")).toBe("bombers");
+    expect(armiesOf("charlie")).toBe("none");
+    expect(bombersOf("charlie")).toBe("none");
   });
 
   it("paints the water over the ground, not under it", () => {

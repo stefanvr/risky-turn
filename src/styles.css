@@ -12,6 +12,8 @@
   --player-4: #b78b3a;
   --player-5: #8a5bb0;
   --player-6: #3f9ea6;
+  /* PROVISIONAL: the accent that says which force is poised to strike. */
+  --accent: #ffd479;
   --border: #14202b;
   --ink: #eef3f7;
   --ink-dim: #9fb3c4;
@@ -203,11 +205,19 @@ body {
 .territory[data-player="5"] { fill: var(--player-5); }
 .territory[data-player="6"] { fill: var(--player-6); }
 
-/* Selection has to read against every player colour, so it is drawn as an
-   outline rather than another fill. */
-.territory[aria-pressed="true"] {
-  stroke: var(--ink);
-  stroke-width: 2.5;
+/*
+ * Selection is drawn as its own mark in a layer above every cell, clipped to
+ * the cell it belongs to. Stroking the cell's own boundary put half the line
+ * outside it, where the next cell painted straight over it.
+ */
+.cell__selection {
+  fill: none;
+  /* The accent, not the ink: a white inset outline is what a defensive line
+     looks like, and the two must not be mistaken for each other. */
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linejoin: round;
+  pointer-events: none;
 }
 
 /* Touch leaves focus behind; only keyboard focus should be drawn. */
@@ -284,4 +294,23 @@ body {
 .territory__armies {
   font-size: 9px;
   font-weight: 700;
+}
+
+/*
+ * Which force the next tap would strike with. The accent sits on the count
+ * itself, so the answer is where the player is already looking, and the other
+ * force steps back rather than disappearing.
+ */
+.territory__armies[data-poised="armies"] {
+  fill: var(--accent);
+}
+
+.territory__bombers[data-poised="bombers"] .bomber__wing,
+.territory__bombers[data-poised="bombers"] .territory__bomberCount {
+  fill: var(--accent);
+}
+
+.territory__armies[data-poised="bombers"],
+.territory__bombers[data-poised="armies"] {
+  opacity: 0.4;
 }

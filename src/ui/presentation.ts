@@ -13,7 +13,11 @@ export interface TerritoryPresentation {
   readonly selected: boolean;
   /** "building" while a declared line is still arming, "holding" once it protects. */
   readonly line: LineShown;
+  /** Which force the next tap would strike with, while this cell is chosen. */
+  readonly poised: Poised;
 }
+
+export type Poised = "armies" | "bombers" | null;
 
 export type LineShown = "none" | "building" | "holding";
 
@@ -70,6 +74,7 @@ export function presentGame(
   state: GameState,
   selected: TerritoryId | null,
   note?: string,
+  armed?: TerritoryId | null,
 ): GamePresentation {
   const numbers = new Map(state.players.map((player, index) => [player, index + 1]));
 
@@ -82,8 +87,11 @@ export function presentGame(
       playerNumber: numbers.get(holding.owner) ?? 0,
       armies: holding.armies,
       bombers: holding.bombers,
-      selected: territory.id === selected,
+      // A cell with its squadron armed is still the cell that is acting, so
+      // it keeps the outline even though it is no longer the tap-selection.
+      selected: territory.id === selected || territory.id === (armed ?? null),
       line: lineShown(holding, state.currentPlayer),
+      poised: poisedOn(state, territory.id, selected, armed ?? null),
     };
   });
 
@@ -123,6 +131,21 @@ function selectionPrompt(state: GameState, selected: TerritoryId | null): string
  * opponent's only once an attack has run into them — after which they stay on
  * the board for good.
  */
+/**
+ * With two ways to strike from one cell, a chosen cell has to say which it
+ * would use. Only the attack phase has that ambiguity, so only it accents.
+ */
+function poisedOn(
+  state: GameState,
+  territory: TerritoryId,
+  selected: TerritoryId | null,
+  armed: TerritoryId | null,
+): Poised {
+  if (state.phase !== "attack" || state.winner !== null) return null;
+  if (territory === armed) return "bombers";
+  return territory === selected ? "armies" : null;
+}
+
 function lineShown(holding: Holding, viewer: PlayerId): LineShown {
   if (holding.line === null) return "none";
   if (holding.owner !== viewer && !holding.line.revealed) return "none";
