@@ -256,6 +256,21 @@ body {
 
 /* Works dug inside a territory: dashed while they are being prepared, solid
    once they hold. */
+/*
+ * The outer edge of a continent. A continent bonus is the reason to hold
+ * ground together, so the ground that pays it is drawn as one shape. It is
+ * lighter than a territory's own border and never dashed, which is what keeps
+ * it apart from the works dug inside a cell.
+ */
+.continent__coast {
+  fill: none;
+  stroke: var(--ink-dim);
+  stroke-width: 2.6;
+  stroke-linejoin: round;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
 /* Water: crossable by bombers, impassable to armies. */
 .sea-link {
   stroke: var(--ink-dim);

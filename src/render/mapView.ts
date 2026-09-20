@@ -1,4 +1,5 @@
 import { centreOf, validateMap } from "../domain/map";
+import { coastsOf } from "./coast";
 import type { GameMap, Point, Territory, TerritoryId } from "../domain/map";
 import type { TerritoryPresentation } from "../ui/presentation";
 
@@ -77,7 +78,7 @@ export function createMapView(map: GameMap): MapView {
   }
   // Painted after the regions: SVG has no z-index, so anything drawn before
   // them is simply covered by opaque ground.
-  element.append(shapes, drawSeaLinks(map), works, selections, labels);
+  element.append(shapes, drawCoasts(map), drawSeaLinks(map), works, selections, labels);
 
   return {
     element,
@@ -299,6 +300,30 @@ function polygonOf(shape: readonly Point[]): SVGPolygonElement {
   const polygon = document.createElementNS(SVG_NS, "polygon");
   polygon.setAttribute("points", shape.map((point) => `${point.x},${point.y}`).join(" "));
   return polygon;
+}
+
+/**
+ * The outer edge of each continent, so the ground a bonus is paid for reads
+ * as one piece and the necks between continents read as the doors they are.
+ */
+function drawCoasts(map: GameMap): SVGElement {
+  const coasts = document.createElementNS(SVG_NS, "g");
+  coasts.setAttribute("class", "map__coasts");
+  coasts.setAttribute("aria-hidden", "true");
+
+  for (const [continent, loops] of coastsOf(map)) {
+    const coast = document.createElementNS(SVG_NS, "path");
+    coast.setAttribute("class", "continent__coast");
+    coast.setAttribute("data-coast-for", continent);
+    coast.setAttribute(
+      "d",
+      loops
+        .map((loop) => `M ${loop.map((point) => `${point.x} ${point.y}`).join(" L ")} Z`)
+        .join(" "),
+    );
+    coasts.append(coast);
+  }
+  return coasts;
 }
 
 /** Water, drawn as the dashed run a bomber can cross and an army cannot. */

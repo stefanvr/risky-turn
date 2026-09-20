@@ -66,7 +66,7 @@ def fill(points, colour, alpha=1.0):
                 blend(x, y, colour, alpha)
 
 
-def stroke(points, colour, width=1.0, closed=True, dash=None):
+def stroke(points, colour, width=1.0, closed=True, dash=None, alpha=1.0):
     edges = list(zip(points, points[1:] + ([points[0]] if closed else [])))
     travelled = 0.0
     for (x1, y1), (x2, y2) in edges:
@@ -80,9 +80,7 @@ def stroke(points, colour, width=1.0, closed=True, dash=None):
             r = width / 2
             for dy in range(int(-r), int(r) + 1):
                 for dx in range(int(-r), int(r) + 1):
-                    px, py = int(cx + dx), int(cy + dy)
-                    if 0 <= px < W and 0 <= py < H:
-                        pixels[py][px] = colour
+                    blend(int(cx + dx), int(cy + dy), colour, alpha)
 
 
 FONT = {
@@ -140,6 +138,16 @@ for tag in re.finditer(r"<polygon[^>]*class=\"territory\"[^>]*>", svg):
     shape = points_of(re.search(r'points="([^"]+)"', body).group(1))
     fill(shape, PALETTE[player.group(1)] if player else PALETTE["land"], VEIL if veiled else 1.0)
     stroke(shape, PALETTE["border"], width=max(1, scale * 1))
+
+# The outer edge of each continent.
+COAST = float(re.search(r'\.continent__coast\s*\{[^}]*opacity:\s*([\d.]+)', SHEET).group(1))
+COAST_W = float(re.search(r'\.continent__coast\s*\{[^}]*stroke-width:\s*([\d.]+)', SHEET).group(1))
+for tag in re.finditer(r'<path[^>]*class="continent__coast"[^>]*d="([^"]+)"', svg):
+    for loop in tag.group(1).split("M ")[1:]:
+        pts = [tuple(map(float, pair.split(" ")))
+               for pair in loop.replace(" Z", "").strip().split(" L ")]
+        stroke([at(x, y) for x, y in pts], PALETTE["dim"],
+               width=max(1, scale * COAST_W), alpha=COAST)
 
 # Water a bomber crosses.
 for tag in re.finditer(r"<line[^>]*class=\"sea-link\"[^>]*>", svg):
