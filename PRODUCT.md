@@ -36,6 +36,7 @@ they are declared. A round needs only a phone and a few minutes of attention.
 - how to run it, reproduce a game, and reach fixtures -> docs/development.md
 - what a map must satisfy to be playable -> src/domain/map.ts
 - the board the game is played on -> src/maps/world.ts
+- what the board says about a continent -> src/render/coast.ts
 - the rules of a turn, and what makes a move illegal -> src/domain/turn.ts
 - how many armies a turn grants -> src/domain/reinforcements.ts
 - how a battle is decided -> src/domain/combat.ts
