@@ -26,6 +26,16 @@ they are declared. A round needs only a phone and a few minutes of attention.
   names of its own rather than Earth, laid out portrait so an upright phone
   shows the whole board at once. Continents meet only at narrow necks, and the
   water between them is crossed by named sea links that only bombers use.
+- The screen states at all times whose turn it is, in that player's own
+  colour, and what the turn still owes. What just happened is reported
+  separately and never displaces it: on a shared phone, the standing question
+  and the last event are two different things and need two places.
+- The game's numbers are reachable from the board. A legend states what a turn
+  earns, what each continent pays and what each unit costs, and it is built
+  from the rules themselves rather than written out a second time.
+- Each continent's coast is drawn in a colour of its own, and pulled inside its
+  own ground so that two continents meeting at a neck show both their lines.
+  Borders between cells wear one colour everywhere.
 - Players share one device and take turns in sequence. There is no computer
   opponent and no network play: the game is passed from hand to hand. Because
   some of what a player knows is secret, ending a turn covers the board until
@@ -33,7 +43,7 @@ they are declared. A round needs only a phone and a few minutes of attention.
 
 ## Where decided truth lives
 - which of Risk's rules are kept, changed or dropped -> docs/rules.md
-- how to run it, reproduce a game, and reach fixtures -> docs/development.md
+- how to run it, picture it, reproduce a game, and reach fixtures -> docs/development.md
 - what a map must satisfy to be playable -> src/domain/map.ts
 - the board the game is played on -> src/maps/world.ts
 - what the board says about a continent -> src/render/coast.ts
@@ -41,7 +51,7 @@ they are declared. A round needs only a phone and a few minutes of attention.
 - how many armies a turn grants -> src/domain/reinforcements.ts
 - how a battle is decided -> src/domain/combat.ts
 - published URL and asset base -> vite.config.ts, .github/workflows/deploy.yml
-- what a cell shows about its forces and its state -> src/ui/presentation.ts
+- what a cell shows, what the turn bar says, and what the legend lists -> src/ui/presentation.ts
 - palette and type tokens -> src/styles.css
 
 ## Deferred
@@ -52,6 +62,10 @@ they are declared. A round needs only a phone and a few minutes of attention.
 - 2026-09-20 — Player colours are placeholders, one token per player in turn
   order, PROVISIONAL in src/styles.css alongside the palette. They read clearly
   enough to play with and are deliberately not settled yet.
+- 2026-09-20 — The six continent colours are kept at full strength rather than
+  softened, because the experiment is only worth judging at the strength it was
+  meant to be played at. They stay PROVISIONAL in src/styles.css alongside the
+  rest of the palette, which waits on players having colours.
 - 2026-09-20 — On taking a territory the attacker advances with everything but
   one army, rather than being asked how many to move. It stays PROVISIONAL in
   src/domain/turn.ts. The choice is real tactical depth, but a second dialog in
