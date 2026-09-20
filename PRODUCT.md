@@ -22,6 +22,10 @@ they are declared. A round needs only a phone and a few minutes of attention.
   Risk. Its skeleton is Risk's — territories, continents, dice combat, victory
   by conquest — and any rule that fights a short hot-seat session on a small
   screen is changed deliberately and recorded rather than inherited.
+- The world is thirty territories in six continents, an invented world with
+  names of its own rather than Earth, laid out portrait so an upright phone
+  shows the whole board at once. Continents meet only at narrow necks, and the
+  water between them is crossed by named sea links that only bombers use.
 - Players share one device and take turns in sequence. There is no computer
   opponent and no network play: the game is passed from hand to hand. Because
   some of what a player knows is secret, ending a turn covers the board until
@@ -31,6 +35,7 @@ they are declared. A round needs only a phone and a few minutes of attention.
 - which of Risk's rules are kept, changed or dropped -> docs/rules.md
 - how to run it, reproduce a game, and reach fixtures -> docs/development.md
 - what a map must satisfy to be playable -> src/domain/map.ts
+- the board the game is played on -> src/maps/world.ts
 - the rules of a turn, and what makes a move illegal -> src/domain/turn.ts
 - how many armies a turn grants -> src/domain/reinforcements.ts
 - how a battle is decided -> src/domain/combat.ts
