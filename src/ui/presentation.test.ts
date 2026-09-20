@@ -6,6 +6,8 @@ import { worldMap } from "../maps/world";
 import { newGame } from "../domain/setup";
 import { seededRandom } from "../domain/random";
 import { withHolding } from "../domain/game";
+import { attack, bomb, IllegalMoveError } from "../domain/turn";
+import { fixedDice } from "../domain/dice";
 import type { GameState } from "../domain/game";
 
 const board = { alfa: "red", bravo: "blue", charlie: "blue", delta: "red", echo: "red" } as const;
@@ -126,58 +128,102 @@ describe("whether the phase may be ended", () => {
 });
 
 /**
- * A bomber reaches two land borders or one sea link, and neither is drawn on
- * the board. While a squadron is armed, the cells it cannot strike are veiled,
- * so the range answers itself instead of having to be known.
+ * A lit cell is somewhere the poised force could strike now. The tests ask
+ * the rules themselves rather than a restatement of them: a cell is lit if
+ * and only if the move the tap would make is one `attack` or `bomb` allows.
  *
- * The discriminating tests run on the world rather than on the proving ground,
- * where every territory happens to lie within reach of every other and a veil
- * would have nothing to say.
+ * They run on the world rather than the proving ground, where every territory
+ * lies within reach of every other and a veil would have nothing to say.
  */
-describe("what an armed squadron shows", () => {
-  const onTheWorld = (squadron: string): GameState => {
+describe("what a poised force shows", () => {
+  const onTheWorld = (acting: string, bombers: number): GameState => {
     const dealt = newGame(worldMap, ["red", "blue"], seededRandom(7));
     const state = { ...dealt, phase: "attack" as const };
-    return withHolding(state, squadron, {
-      ...state.holdings.get(squadron)!,
+    return withHolding(state, acting, {
+      ...state.holdings.get(acting)!,
       owner: state.currentPlayer,
-      armies: 3,
-      bombers: 2,
+      armies: 6,
+      bombers,
     });
   };
 
-  it("veils nothing while no squadron is armed", () => {
-    const shown = presentGame(onTheWorld("cairn"), "cairn").territories;
-    expect(shown.map((t) => t.reach)).toEqual(shown.map(() => null));
-  });
+  const allows = (move: () => unknown): boolean => {
+    try {
+      move();
+      return true;
+    } catch (error) {
+      if (error instanceof IllegalMoveError) return false;
+      throw error;
+    }
+  };
 
-  it("veils exactly what the squadron cannot strike", () => {
-    const state = onTheWorld("cairn");
+  it("lights exactly the ground a squadron may bomb, its own ground included in neither", () => {
+    const state = onTheWorld("cairn", 3);
     const shown = presentGame(state, null, undefined, "cairn").territories;
     for (const territory of shown) {
       if (territory.id === "cairn") continue;
+      const legal = allows(() => bomb(state, "cairn", territory.id, fixedDice([1])));
       expect(
-        territory.reach,
-        `${territory.id} is marked "${territory.reach}" but reach says otherwise`,
-      ).toBe(withinBomberReach(worldMap, "cairn", territory.id) ? "in" : "out");
+        territory.reach === "in",
+        `${territory.id} is lit: ${territory.reach === "in"}, but bombing it is ${legal}`,
+      ).toBe(legal);
     }
   });
 
-  it("never veils the ground the squadron stands on", () => {
-    const shown = presentGame(onTheWorld("cairn"), null, undefined, "cairn").territories;
-    expect(shown.find((t) => t.id === "cairn")?.reach).toBe("in");
+  it("lights exactly the ground an army may attack", () => {
+    const state = onTheWorld("cairn", 0);
+    const shown = presentGame(state, "cairn").territories;
+    for (const territory of shown) {
+      if (territory.id === "cairn") continue;
+      const legal = allows(() => attack(state, "cairn", territory.id, fixedDice([1])));
+      expect(
+        territory.reach === "in",
+        `${territory.id} is lit: ${territory.reach === "in"}, but attacking it is ${legal}`,
+      ).toBe(legal);
+    }
   });
 
-  it("marks some of the board either way, or the veil would say nothing", () => {
-    const shown = presentGame(onTheWorld("cairn"), null, undefined, "cairn").territories;
+  it("never veils the cell that is acting", () => {
+    const armed = presentGame(onTheWorld("cairn", 3), null, undefined, "cairn").territories;
+    expect(armed.find((t) => t.id === "cairn")?.reach).toBe("in");
+    const chosen = presentGame(onTheWorld("cairn", 0), "cairn").territories;
+    expect(chosen.find((t) => t.id === "cairn")?.reach).toBe("in");
+  });
+
+  it("marks the board both ways, or the veil would be saying nothing", () => {
+    const shown = presentGame(onTheWorld("cairn", 3), null, undefined, "cairn").territories;
     expect(shown.filter((t) => t.reach === "in").length).toBeGreaterThan(1);
     expect(shown.filter((t) => t.reach === "out").length).toBeGreaterThan(1);
   });
 
+  it("veils the whole board around a cell with nothing it may attack", () => {
+    // Every neighbour of Cairn handed to its own holder: nothing to attack.
+    let state = onTheWorld("cairn", 0);
+    for (const neighbour of worldMap.territories.find((t) => t.id === "cairn")!.neighbours) {
+      state = withHolding(state, neighbour, {
+        ...state.holdings.get(neighbour)!,
+        owner: state.currentPlayer,
+      });
+    }
+    const shown = presentGame(state, "cairn").territories;
+    expect(shown.filter((t) => t.reach === "in").map((t) => t.id)).toEqual(["cairn"]);
+  });
+
   it("reaches across water a march could not, and stops short of ground two borders away", () => {
     // Dunmar is linked by sea to Verrick, and three land borders from Sable.
-    const shown = presentGame(onTheWorld("dunmar"), null, undefined, "dunmar").territories;
-    expect(shown.find((t) => t.id === "verrick")?.reach).toBe("in");
+    const state = onTheWorld("dunmar", 3);
+    const shown = presentGame(state, null, undefined, "dunmar").territories;
+    const held = (id: string) => state.holdings.get(id)!.owner === state.currentPlayer;
+    expect(shown.find((t) => t.id === "verrick")?.reach).toBe(held("verrick") ? "out" : "in");
     expect(shown.find((t) => t.id === "sable")?.reach).toBe("out");
+  });
+
+  it("veils nothing while nothing is chosen, or where there is nothing to strike", () => {
+    const idle = presentGame(onTheWorld("cairn", 3), null).territories;
+    expect(idle.map((t) => t.reach)).toEqual(idle.map(() => null));
+
+    const fortifying = { ...onTheWorld("cairn", 0), phase: "fortify" as const };
+    const moving = presentGame(fortifying, "cairn").territories;
+    expect(moving.map((t) => t.reach)).toEqual(moving.map(() => null));
   });
 });
