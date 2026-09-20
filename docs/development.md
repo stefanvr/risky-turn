@@ -42,11 +42,13 @@ about whether it carries. Take a picture instead:
 
 ```sh
 PICTURE_TO=/tmp/board.svg PICTURE_ARM=cairn pnpm vitest run src/dev/picture.test.ts
+# PICTURE_CHOOSE=cairn instead, to choose a cell without arming its squadron
 python3 scripts/board-picture.py /tmp/board.svg /tmp/board.png
 ```
 
 The first writes out the SVG the renderer actually produced, with a squadron
-armed if `PICTURE_ARM` names a territory. The second draws it at the size a
+chosen if `PICTURE_CHOOSE` names a territory, and its squadron armed if
+`PICTURE_ARM` does. The second draws it at the size a
 phone shows it — 366 by 560, the map's share of a 390px screen — reading the
 colours and opacities from `src/styles.css` rather than restating them.
 Letterforms are a 3x5 grid rather than the browser's font, so it answers

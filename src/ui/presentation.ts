@@ -1,5 +1,6 @@
 import { lineIsHolding, LINE_MINIMUM_GARRISON } from "../domain/game";
 import { withinBomberReach } from "../domain/reach";
+import { bordersEachOther } from "../domain/turn";
 import type { GameState, Holding, PlayerId } from "../domain/game";
 import type { TerritoryId } from "../domain/map";
 
@@ -17,9 +18,10 @@ export interface TerritoryPresentation {
   /** Which force the next tap would strike with, while this cell is chosen. */
   readonly poised: Poised;
   /**
-   * Whether an armed squadron could strike here, and `null` while none is
-   * armed. A bomber's range is not drawn on the map, so it is answered on the
-   * board itself at the moment the question is asked.
+   * Whether the poised force could strike here, and `null` while nothing is
+   * poised. Neither a bomber's range nor which neighbours may be attacked is
+   * drawn on the map, so both are answered on the board itself at the moment
+   * the question is asked.
    */
   readonly reach: Reach;
 }
@@ -99,7 +101,7 @@ export function presentGame(
       selected: territory.id === selected || territory.id === (armed ?? null),
       line: lineShown(holding, state.currentPlayer),
       poised: poisedOn(state, territory.id, selected, armed ?? null),
-      reach: reachFrom(state, territory.id, armed ?? null),
+      reach: reachOf(state, territory.id, selected, armed ?? null),
     };
   });
 
@@ -164,14 +166,31 @@ function poisedOn(
 }
 
 /**
- * What an armed squadron can strike. The ground it stands on is never out of
- * reach: it is not a target, it is the cell that is acting, and veiling it
- * would hide the squadron being asked about.
+ * Whether the poised force could strike this cell now — the same question for
+ * a squadron and for an army, and the same answer a tap would get.
+ *
+ * The cell that is acting is never veiled: it is not a target, it is the cell
+ * being asked about, and veiling it would hide the force in question.
  */
-function reachFrom(state: GameState, territory: TerritoryId, armed: TerritoryId | null): Reach {
-  if (armed === null) return null;
-  if (territory === armed) return "in";
-  return withinBomberReach(state.map, armed, territory) ? "in" : "out";
+function reachOf(
+  state: GameState,
+  territory: TerritoryId,
+  selected: TerritoryId | null,
+  armed: TerritoryId | null,
+): Reach {
+  const acting = armed ?? (state.phase === "attack" ? selected : null);
+  if (acting === null || state.winner !== null) return null;
+  if (territory === acting) return "in";
+
+  // Neither force may strike its own side, so ground held by the player is
+  // never a target, however close it lies.
+  const target = state.holdings.get(territory);
+  if (target === undefined || target.owner === state.currentPlayer) return "out";
+
+  const open = armed !== null
+    ? withinBomberReach(state.map, acting, territory)
+    : bordersEachOther(state, acting, territory);
+  return open ? "in" : "out";
 }
 
 function lineShown(holding: Holding, viewer: PlayerId): LineShown {

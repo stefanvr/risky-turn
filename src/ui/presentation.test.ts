@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { presentGame } from "./presentation";
 import { stateWhere } from "../domain/testGames";
-import { withinBomberReach } from "../domain/reach";
 import { worldMap } from "../maps/world";
 import { newGame } from "../domain/setup";
 import { seededRandom } from "../domain/random";

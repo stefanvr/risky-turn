@@ -337,7 +337,7 @@ function requirePhase(state: GameState, phase: Phase): void {
   if (state.phase !== phase) illegal(`this is the ${state.phase} phase, not ${phase}`);
 }
 
-function bordersEachOther(state: GameState, a: TerritoryId, b: TerritoryId): boolean {
+export function bordersEachOther(state: GameState, a: TerritoryId, b: TerritoryId): boolean {
   const territory = state.map.territories.find((candidate) => candidate.id === a);
   return territory?.neighbours.includes(b) ?? false;
 }
