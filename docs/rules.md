@@ -18,11 +18,11 @@ was made up on the spot for the same reason. Neither has been argued for.
 | Defender rolls up to 2 dice, one per army | `src/domain/combat.ts` | inherited |
 | Dice sorted and paired highest-first; defender takes ties | `src/domain/combat.ts` | inherited |
 | Six-sided dice | `src/domain/dice.ts` | inherited |
-| One call resolves one exchange; pressing an attack is repeated | `src/domain/turn.ts` | inherited |
+| One call resolves one exchange; pressing an attack is repeated | `src/domain/turn.ts` | **decided** — the tension of each roll is the point, and is worth the taps |
 | Attack needs: own source, enemy target, shared border, 2+ armies | `src/domain/turn.ts` | inherited |
 | On conquest the attacker advances with all but one army | `src/domain/turn.ts` | **deviation**, deferred |
 | One fortify per turn | `src/domain/turn.ts` | inherited |
-| Fortify travels any path through the player's own territory | `src/domain/turn.ts` | inherited (one of Risk's own variants) |
+| Fortify travels any path through the player's own territory | `src/domain/turn.ts` | inherited (one of Risk's own variants) — rewards a connected empire, which pairs with continent bonuses |
 | A fortify moves all but one army | `src/ui/game.ts` | **deviation**, PROVISIONAL |
 | Turn runs deploy, then attack, then fortify | `src/domain/game.ts` | inherited |
 | Every reinforcement must be placed before the phase ends | `src/domain/turn.ts` | inherited |
@@ -40,19 +40,23 @@ was made up on the spot for the same reason. Neither has been argued for.
   sooner than world domination does.
 - **Taking an eliminated player's cards**, which follows from having no cards.
 
-## The question this raises
+## The settled position
 
-Risky Turn is played on a phone, in hot-seat, by players passing one device.
-Risk's rules were written for a table, an afternoon, and players who cannot put
-the board in their pocket. Three of the inherited rules are in direct tension
-with that setting:
+Risky Turn is a game of the Risk genre shaped for a phone, not a port of Risk
+(`PRODUCT.md`). An inherited rule therefore has to earn its place against a
+ten-to-twenty-minute hot-seat session on a small screen; where it cannot, it is
+changed deliberately and the change is recorded here.
 
-1. **No escalation.** Risk without cards does not reliably end.
-2. **One tap-pair per dice exchange.** Taking a six-army territory can cost a
-   dozen taps, each one a separate decision the player did not want to make.
-3. **A full turn has three phases**, two of which are usually skipped, and each
-   handover passes the device.
+Tapping is the exception already argued: one tap-pair resolves one dice
+exchange, and pressing an attack home costs many taps. That cost is accepted,
+because the decision to roll again is the tension the genre runs on.
 
-Whether these are problems depends on an unsettled question: is Risky Turn
-meant to be Risk on a phone, or a game of the Risk genre shaped for a phone?
-That is a product decision, not an implementation one.
+## Still open
+
+**Escalation.** Nothing forces a game to end. Income is near flat and the
+defender takes ties, so a dug-in position is cheap to hold and expensive to
+take. This is the largest gap between the rules as they stand and a game that
+finishes inside a phone session.
+
+**The opening.** Territories are dealt at random and opening armies are spread
+automatically, so the first decision a player makes is several turns in.

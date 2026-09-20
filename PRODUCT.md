@@ -17,10 +17,15 @@ sustained, and no round needs more than a phone and a few minutes of attention.
   https://stefanvr.github.io/risky-turn/ on every push to main. There is no
   server and no account: a player opens a URL. A build that fails the check is
   never published.
+- Risky Turn is a game of the Risk genre shaped for a phone, not a port of
+  Risk. Its skeleton is Risk's — territories, continents, dice combat, victory
+  by conquest — and any rule that fights a short hot-seat session on a small
+  screen is changed deliberately and recorded rather than inherited.
 - Players share one device and take turns in sequence. There is no computer
   opponent and no network play: the game is passed from hand to hand.
 
 ## Where decided truth lives
+- which of Risk's rules are kept, changed or dropped -> docs/rules.md
 - what a map must satisfy to be playable -> src/domain/map.ts
 - the rules of a turn, and what makes a move illegal -> src/domain/turn.ts
 - how many armies a turn grants -> src/domain/reinforcements.ts
