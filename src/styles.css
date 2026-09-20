@@ -14,7 +14,20 @@
   --player-6: #3f9ea6;
   /* PROVISIONAL: the accent that says which force is poised to strike. */
   --accent: #ffd479;
-  --border: #14202b;
+  /*
+   * PROVISIONAL: one colour per continent, in the order the map lists them,
+   * worn by that continent's coast alone. They are brighter and further apart
+   * in hue than the player colours they are drawn over, so a coast reads as a
+   * line about the ground rather than as a claim on it.
+   */
+  --coast-1: #ff8a5c;
+  --coast-2: #58c7ff;
+  --coast-3: #62e08a;
+  --coast-4: #ffd84d;
+  --coast-5: #c08cff;
+  --coast-6: #ff6fd0;
+  /* Every border between two cells, whichever continents they are in. */
+  --border: #64778a;
   --ink: #eef3f7;
   --ink-dim: #9fb3c4;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -270,6 +283,18 @@ body {
   opacity: 0.8;
   pointer-events: none;
 }
+
+/*
+ * A coast wears its continent's own colour, so the six pieces of ground a
+ * bonus is paid for are told apart at a glance. Cell borders wear one colour
+ * everywhere: inside a continent there is nothing to tell apart.
+ */
+.continent__coast[data-coast="1"] { stroke: var(--coast-1); }
+.continent__coast[data-coast="2"] { stroke: var(--coast-2); }
+.continent__coast[data-coast="3"] { stroke: var(--coast-3); }
+.continent__coast[data-coast="4"] { stroke: var(--coast-4); }
+.continent__coast[data-coast="5"] { stroke: var(--coast-5); }
+.continent__coast[data-coast="6"] { stroke: var(--coast-6); }
 
 /* Water: crossable by bombers, impassable to armies. */
 .sea-link {

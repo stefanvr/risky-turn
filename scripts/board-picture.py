@@ -16,13 +16,6 @@ OUT = sys.argv[2]
 SCALE_UP = int(sys.argv[3]) if len(sys.argv) > 3 else 1
 
 BOX_W, BOX_H = 366, 560           # the map's share of a 390px phone
-PALETTE = {
-    "sea": (0x14, 0x20, 0x2b), "land": (0x3d, 0x54, 0x68),
-    "1": (0xc1, 0x54, 0x3f), "2": (0x3f, 0x7f, 0xc1), "3": (0x4f, 0x9e, 0x6a),
-    "4": (0xb7, 0x8b, 0x3a), "5": (0x8a, 0x5b, 0xb0), "6": (0x3f, 0x9e, 0xa6),
-    "ink": (0xee, 0xf3, 0xf7), "dim": (0x9f, 0xb3, 0xc4),
-    "accent": (0xff, 0xd4, 0x79), "border": (0x14, 0x20, 0x2b),
-}
 
 svg = open(SVG).read()
 view = re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', svg)
@@ -33,6 +26,17 @@ ox = (W - MW * scale) / 2
 oy = (H - MH * scale) / 2
 
 SHEET = open(os.path.join(os.path.dirname(__file__), "..", "src", "styles.css")).read()
+
+# Every colour comes from the sheet's own tokens, so a picture cannot show a
+# board painted in colours the browser would not use.
+ROOT = re.search(r":root\s*\{(.*?)\}", SHEET, re.S).group(1)
+PALETTE = {
+    name: tuple(int(value[i:i + 2], 16) for i in (1, 3, 5))
+    for name, value in re.findall(r"--([\w-]+):\s*(#[0-9a-fA-F]{6});", ROOT)
+}
+PALETTE["dim"] = PALETTE["ink-dim"]
+for number in "123456":
+    PALETTE[number] = PALETTE[f"player-{number}"]
 VEIL = float(re.search(r'data-reach="out"\]\s*\{[^}]*fill-opacity:\s*([\d.]+)', SHEET).group(1))
 VEIL_INK = float(re.search(r'\.force\[data-reach="out"\]\s*\{[^}]*opacity:\s*([\d.]+)', SHEET).group(1))
 
@@ -142,11 +146,13 @@ for tag in re.finditer(r"<polygon[^>]*class=\"territory\"[^>]*>", svg):
 # The outer edge of each continent.
 COAST = float(re.search(r'\.continent__coast\s*\{[^}]*opacity:\s*([\d.]+)', SHEET).group(1))
 COAST_W = float(re.search(r'\.continent__coast\s*\{[^}]*stroke-width:\s*([\d.]+)', SHEET).group(1))
-for tag in re.finditer(r'<path[^>]*class="continent__coast"[^>]*d="([^"]+)"', svg):
-    for loop in tag.group(1).split("M ")[1:]:
+for tag in re.finditer(r'<path[^>]*class="continent__coast"[^>]*>', svg):
+    number = re.search(r'data-coast="(\d+)"', tag.group(0))
+    colour = PALETTE[f"coast-{number.group(1)}"] if number else PALETTE["dim"]
+    for loop in re.search(r'd="([^"]+)"', tag.group(0)).group(1).split("M ")[1:]:
         pts = [tuple(map(float, pair.split(" ")))
                for pair in loop.replace(" Z", "").strip().split(" L ")]
-        stroke([at(x, y) for x, y in pts], PALETTE["dim"],
+        stroke([at(x, y) for x, y in pts], colour,
                width=max(1, scale * COAST_W), alpha=COAST)
 
 # Water a bomber crosses.

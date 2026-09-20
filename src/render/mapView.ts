@@ -315,6 +315,12 @@ function drawCoasts(map: GameMap): SVGElement {
     const coast = document.createElementNS(SVG_NS, "path");
     coast.setAttribute("class", "continent__coast");
     coast.setAttribute("data-coast-for", continent);
+    // Numbered the way players are, so a continent keeps one colour whatever
+    // it is called and the stylesheet never has to know the board.
+    coast.setAttribute(
+      "data-coast",
+      String(map.continents.findIndex((candidate) => candidate.id === continent) + 1),
+    );
     coast.setAttribute(
       "d",
       loops
