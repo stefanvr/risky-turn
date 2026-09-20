@@ -1,4 +1,13 @@
-import { PHASE_ORDER, holdingOf, isInTheGame, territoriesOf, withHolding } from "./game";
+import {
+  LINE_MINIMUM_GARRISON,
+  PHASE_ORDER,
+  TURNS_TO_HARDEN,
+  holdingOf,
+  isInTheGame,
+  lineIsHolding,
+  territoriesOf,
+  withHolding,
+} from "./game";
 import { reinforcementsFor } from "./reinforcements";
 import { resolveBattle } from "./combat";
 import type { Battle } from "./combat";
@@ -76,7 +85,11 @@ export function attack(
   }
 
   const battle = resolveBattle(
-    { attacking: attacker.armies, defending: defender.armies },
+    {
+      attacking: attacker.armies,
+      defending: defender.armies,
+      dugIn: lineIsHolding(defender),
+    },
     dice,
   );
 
@@ -84,23 +97,59 @@ export function attack(
   const survivingDefenders = defender.armies - battle.defenderLosses;
   const conquered = survivingDefenders === 0;
 
-  let next = withHolding(state, from, { ...attacker, armies: survivingAttackers });
+  // A line holds ground; it does not stage attacks. Sortieing breaks it.
+  let next = withHolding(state, from, {
+    ...attacker,
+    armies: survivingAttackers,
+    line: null,
+  });
   if (conquered) {
     /*
      * PROVISIONAL: on taking a territory the attacker advances with everything
      * but one army. The alternative is asking how many to move, which is a
      * second decision and a second dialog on a phone.
      */
-    next = withHolding(next, from, { owner: attacker.owner, armies: 1 });
+    next = withHolding(next, from, { owner: attacker.owner, armies: 1, line: null });
+    // Ground taken is ground without a line: the works were manned by the
+    // player who lost it.
     next = withHolding(next, to, {
       owner: attacker.owner,
       armies: survivingAttackers - 1,
+      line: null,
     });
   } else {
     next = withHolding(next, to, { ...defender, armies: survivingDefenders });
   }
 
   return { state: declareWinnerIfAny(next), battle, conquered };
+}
+
+/**
+ * Declares a defensive line: the turn's fortify spent on digging in rather
+ * than manoeuvring. It protects nothing yet — see TURNS_TO_HARDEN.
+ */
+export function digIn(state: GameState, territory: TerritoryId): GameState {
+  requirePhase(state, "fortify");
+  if (state.hasFortified) illegal("a turn allows only one fortify");
+
+  const holding = holdingOf(state, territory);
+  if (holding.owner !== state.currentPlayer) {
+    illegal(`${state.currentPlayer} does not hold ${territory}`);
+  }
+  if (holding.line !== null) illegal(`${territory} already holds a line`);
+  if (holding.armies < LINE_MINIMUM_GARRISON) {
+    illegal(
+      `${territory} needs ${LINE_MINIMUM_GARRISON} armies to dig in, and has ${holding.armies}`,
+    );
+  }
+
+  return {
+    ...withHolding(state, territory, {
+      ...holding,
+      line: { turnsUntilHolding: TURNS_TO_HARDEN },
+    }),
+    hasFortified: true,
+  };
 }
 
 /** Moves armies between two of the player's own territories, once per turn. */
@@ -146,7 +195,25 @@ export function endPhase(state: GameState): GameState {
   const next = PHASE_ORDER[PHASE_ORDER.indexOf(state.phase) + 1];
   if (next) return { ...state, phase: next };
 
-  return beginTurnOf(state, nextPlayerStillInTheGame(state));
+  const settled = hardenLinesOf(state, state.currentPlayer);
+  return beginTurnOf(settled, nextPlayerStillInTheGame(settled));
+}
+
+/**
+ * Brings the player's own lines one turn closer to holding. Only their own
+ * turns count, so a line cannot be armed by opponents playing quickly.
+ */
+function hardenLinesOf(state: GameState, player: PlayerId): GameState {
+  let next = state;
+  for (const [territory, holding] of state.holdings) {
+    if (holding.owner !== player) continue;
+    if (holding.line === null || holding.line.turnsUntilHolding === 0) continue;
+    next = withHolding(next, territory, {
+      ...holding,
+      line: { turnsUntilHolding: holding.line.turnsUntilHolding - 1 },
+    });
+  }
+  return next;
 }
 
 function beginTurnOf(state: GameState, player: PlayerId): GameState {

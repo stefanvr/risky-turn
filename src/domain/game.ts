@@ -7,9 +7,29 @@ export type Phase = "deploy" | "attack" | "fortify";
 
 export const PHASE_ORDER: readonly Phase[] = ["deploy", "attack", "fortify"];
 
+/**
+ * A territory dug in. A line is declared long before it protects: the count is
+ * how many of the holder's own turns must still end before it holds, so
+ * opponents can see a line being built and have a round in which to break it.
+ */
+export interface DefensiveLine {
+  readonly turnsUntilHolding: number;
+}
+
 export interface Holding {
   readonly owner: PlayerId;
   readonly armies: number;
+  readonly line: DefensiveLine | null;
+}
+
+/** Armies a territory must keep standing for a line to be declared or to hold. */
+export const LINE_MINIMUM_GARRISON = 5;
+
+/** Turns of the declaring player's own that must end before a line protects. */
+export const TURNS_TO_HARDEN = 2;
+
+export function lineIsHolding(holding: Holding): boolean {
+  return holding.line !== null && holding.line.turnsUntilHolding === 0;
 }
 
 /**
@@ -47,13 +67,26 @@ export function isInTheGame(state: GameState, player: PlayerId): boolean {
   return territoriesOf(state, player).length > 0;
 }
 
-/** A new state with one territory's holding replaced. */
+/**
+ * A new state with one territory's holding replaced.
+ *
+ * A line cannot outlive the garrison that mans it, so this is where a
+ * collapse is enforced: every path that can thin a territory — losing a
+ * battle, marching armies out, being conquered — goes through here, and none
+ * of them has to remember the rule.
+ */
 export function withHolding(
   state: GameState,
   territory: TerritoryId,
   holding: Holding,
 ): GameState {
   const holdings = new Map(state.holdings);
-  holdings.set(territory, holding);
+  holdings.set(territory, manned(holding));
   return { ...state, holdings };
+}
+
+function manned(holding: Holding): Holding {
+  return holding.armies < LINE_MINIMUM_GARRISON && holding.line !== null
+    ? { ...holding, line: null }
+    : holding;
 }

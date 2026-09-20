@@ -1,5 +1,5 @@
 import { centreOf, validateMap } from "../domain/map";
-import type { GameMap, Territory, TerritoryId } from "../domain/map";
+import type { GameMap, Point, Territory, TerritoryId } from "../domain/map";
 import type { TerritoryPresentation } from "../ui/presentation";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -29,6 +29,10 @@ export function createMapView(map: GameMap): MapView {
 
   const regions = new Map<TerritoryId, SVGElement>();
   const counts = new Map<TerritoryId, SVGElement>();
+  const lines = new Map<TerritoryId, SVGElement>();
+  const works = document.createElementNS(SVG_NS, "g");
+  works.setAttribute("class", "map__lines");
+  works.setAttribute("aria-hidden", "true");
   const labels = document.createElementNS(SVG_NS, "g");
   labels.setAttribute("class", "map__labels");
   labels.setAttribute("aria-hidden", "true");
@@ -38,11 +42,15 @@ export function createMapView(map: GameMap): MapView {
     regions.set(territory.id, region);
     element.append(region);
 
+    const line = drawLine(territory);
+    lines.set(territory.id, line);
+    works.append(line);
+
     const { group, count } = drawLabel(territory);
     counts.set(territory.id, count);
     labels.append(group);
   }
-  element.append(labels);
+  element.append(works, labels);
 
   return {
     element,
@@ -51,13 +59,16 @@ export function createMapView(map: GameMap): MapView {
       for (const shown of territories) {
         const region = regions.get(shown.id);
         const count = counts.get(shown.id);
-        if (!region || !count) continue;
+        const line = lines.get(shown.id);
+        if (!region || !count || !line) continue;
+
+        line.setAttribute("data-line", shown.line);
 
         region.setAttribute("data-player", String(shown.playerNumber));
         region.setAttribute("aria-pressed", String(shown.selected));
         region.setAttribute(
           "aria-label",
-          `${shown.name}, held by ${shown.owner}, ${armiesInWords(shown.armies)}`,
+          `${shown.name}, held by ${shown.owner}, ${armiesInWords(shown.armies)}${lineInWords(shown.line)}`,
         );
         count.textContent = String(shown.armies);
       }
@@ -108,6 +119,39 @@ function drawLabel(territory: Territory): { group: SVGElement; count: SVGElement
 
   group.append(name, count);
   return { group, count };
+}
+
+/**
+ * A line is drawn as an outline set inside the territory's own border, so it
+ * reads as works dug within the ground rather than competing with the
+ * selection outline on the border itself.
+ */
+function drawLine(territory: Territory): SVGElement {
+  const line = document.createElementNS(SVG_NS, "polygon");
+  line.setAttribute("class", "territory__line");
+  line.setAttribute("data-line-for", territory.id);
+  line.setAttribute("data-line", "none");
+  line.setAttribute(
+    "points",
+    inset(territory.shape, 0.16)
+      .map((point) => `${point.x},${point.y}`)
+      .join(" "),
+  );
+  return line;
+}
+
+/** The same shape, pulled towards its centre by a fraction of its size. */
+function inset(shape: readonly Point[], fraction: number): Point[] {
+  const centre = centreOf(shape);
+  return shape.map((point) => ({
+    x: point.x + (centre.x - point.x) * fraction,
+    y: point.y + (centre.y - point.y) * fraction,
+  }));
+}
+
+function lineInWords(line: TerritoryPresentation["line"]): string {
+  if (line === "building") return ", digging in";
+  return line === "holding" ? ", dug in" : "";
 }
 
 function armiesInWords(armies: number): string {

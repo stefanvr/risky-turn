@@ -53,7 +53,11 @@ export function newGame(
   const holdings = new Map<TerritoryId, Holding>();
   for (const territory of map.territories) {
     const owner = players.find((player) => claims.get(player)!.includes(territory.id))!;
-    holdings.set(territory.id, { owner, armies: armies.get(territory.id)! });
+    holdings.set(territory.id, {
+      owner,
+      armies: armies.get(territory.id)!,
+      line: null,
+    });
   }
 
   const opening: GameState = {

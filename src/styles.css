@@ -133,6 +133,30 @@ body {
   stroke-width: 2;
 }
 
+/* Works dug inside a territory: dashed while they are being prepared, solid
+   once they hold. */
+.territory__line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.territory__line[data-line="none"] {
+  display: none;
+}
+
+.territory__line[data-line="building"] {
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+  opacity: 0.5;
+}
+
+.territory__line[data-line="holding"] {
+  stroke-width: 2.2;
+  opacity: 0.9;
+}
+
 .territory__name,
 .territory__armies {
   fill: var(--ink);

@@ -73,7 +73,7 @@ function reinforcementsOnALineOf(size: number, held: number): number {
   const holdings = new Map<string, Holding>(
     map.territories.map((territory, index) => [
       territory.id,
-      { owner: index < held ? "red" : "blue", armies: 1 },
+      { owner: index < held ? "red" : "blue", armies: 1, line: null },
     ]),
   );
 

@@ -19,6 +19,7 @@ function board(
     playerNumber: 1,
     armies: 1,
     selected: false,
+    line: "none" as const,
     ...overrides[territory.id],
   }));
 }
@@ -69,6 +70,16 @@ describe("map view", () => {
 
     view.show(board());
     expect(selectedIds(view.element)).toEqual([]);
+  });
+
+  it("shows where a line is being built and where one holds", () => {
+    const view = createMapView(provingMap);
+    view.show(board({ alfa: { line: "building" }, bravo: { line: "holding" } }));
+    const lineOf = (id: string) =>
+      view.element.querySelector(`[data-line-for="${id}"]`)?.getAttribute("data-line");
+    expect(lineOf("alfa")).toBe("building");
+    expect(lineOf("bravo")).toBe("holding");
+    expect(lineOf("charlie")).toBe("none");
   });
 
   it("describes a region for a screen reader as its holder and strength", () => {

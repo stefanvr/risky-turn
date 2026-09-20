@@ -14,6 +14,15 @@ describe("how many dice a battle is fought with", () => {
     expect(diceFor({ attacking: 9, defending: 1 }).defender).toBe(1);
     expect(diceFor({ attacking: 9, defending: 5 }).defender).toBe(2);
   });
+
+  it("lets a defender behind a line roll a third die", () => {
+    expect(diceFor({ attacking: 9, defending: 5, dugIn: true }).defender).toBe(3);
+  });
+
+  it("never lets a line conjure dice out of armies that are not there", () => {
+    expect(diceFor({ attacking: 9, defending: 2, dugIn: true }).defender).toBe(2);
+    expect(diceFor({ attacking: 9, defending: 1, dugIn: true }).defender).toBe(1);
+  });
 });
 
 describe("resolving a battle", () => {

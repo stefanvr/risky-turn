@@ -1,6 +1,6 @@
 import { createMapView } from "../render/mapView";
 import { presentGame } from "./presentation";
-import { attack, deploy, endPhase, fortify, IllegalMoveError } from "../domain/turn";
+import { attack, deploy, digIn, endPhase, fortify, IllegalMoveError } from "../domain/turn";
 import { holdingOf } from "../domain/game";
 import type { Dice } from "../domain/dice";
 import type { GameState } from "../domain/game";
@@ -93,6 +93,15 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
         tryMove(() => {
           const from = selected!;
           selected = null;
+          if (from === tapped) {
+            /*
+             * PROVISIONAL: digging in is a second tap on the chosen territory
+             * rather than its own control, which keeps one button on screen.
+             * The status line offers it, so it is not left to be discovered.
+             */
+            state = digIn(state, from);
+            return;
+          }
           /*
            * PROVISIONAL: a fortify moves everything that can leave, keeping one
            * army behind, rather than asking how many. It is one gesture instead

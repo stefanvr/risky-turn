@@ -119,6 +119,32 @@ describe("attacking by tapping", () => {
   });
 });
 
+describe("digging in", () => {
+  const readyToFortify = (armies: Record<string, number>) =>
+    stateWhere(board, { phase: "fortify", armies });
+
+  it("digs in when a garrisoned territory is tapped twice", () => {
+    mountGame(host, readyToFortify({ alfa: 6, bravo: 1, charlie: 1, delta: 1, echo: 1 }), fixedDice([1]));
+    tap("alfa");
+    tap("alfa");
+    expect(host.querySelector('[data-line-for="alfa"]')?.getAttribute("data-line")).toBe("building");
+  });
+
+  it("says why a thin garrison cannot dig in", () => {
+    mountGame(host, readyToFortify({ alfa: 3, bravo: 1, charlie: 1, delta: 1, echo: 1 }), fixedDice([1]));
+    tap("alfa");
+    tap("alfa");
+    expect(status()).toMatch(/5 armies/i);
+    expect(host.querySelector('[data-line-for="alfa"]')?.getAttribute("data-line")).toBe("none");
+  });
+
+  it("offers the choice once a garrisoned territory is selected", () => {
+    mountGame(host, readyToFortify({ alfa: 6, bravo: 1, charlie: 1, delta: 1, echo: 1 }), fixedDice([1]));
+    tap("alfa");
+    expect(status()).toMatch(/dig in/i);
+  });
+});
+
 describe("moving through the turn", () => {
   it("runs deploy, attack, fortify, then hands over to the next player", () => {
     mountGame(host, stateWhere(board, { reinforcementsLeft: 0 }), fixedDice([1]));

@@ -18,6 +18,17 @@ describe("what the board shows", () => {
     expect(shown.find((t) => t.id === "bravo")?.playerNumber).toBe(2);
   });
 
+  it("distinguishes a line being built from one that holds", () => {
+    const state = stateWhere(board, {
+      armies: { delta: 6, echo: 6 },
+      lines: { delta: 1, echo: 0 },
+    });
+    const shown = presentGame(state, null).territories;
+    expect(shown.find((t) => t.id === "delta")?.line).toBe("building");
+    expect(shown.find((t) => t.id === "echo")?.line).toBe("holding");
+    expect(shown.find((t) => t.id === "alfa")?.line).toBe("none");
+  });
+
   it("marks the selected territory and only that one", () => {
     const state = stateWhere(board);
     const shown = presentGame(state, "delta").territories;

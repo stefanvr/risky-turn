@@ -5,6 +5,8 @@ export interface Contest {
   readonly attacking: number;
   /** Armies standing in the defending territory. */
   readonly defending: number;
+  /** Whether a defensive line holds the defending territory. */
+  readonly dugIn?: boolean;
 }
 
 export interface DiceCount {
@@ -21,6 +23,7 @@ export interface Battle {
 
 const MAX_ATTACK_DICE = 3;
 const MAX_DEFEND_DICE = 2;
+const MAX_DEFEND_DICE_BEHIND_A_LINE = 3;
 
 /**
  * An attacker must leave one army behind, so it rolls one die per army beyond
@@ -29,13 +32,17 @@ const MAX_DEFEND_DICE = 2;
 export function diceFor(contest: Contest): DiceCount {
   return {
     attacker: Math.min(MAX_ATTACK_DICE, Math.max(0, contest.attacking - 1)),
-    defender: Math.min(MAX_DEFEND_DICE, Math.max(0, contest.defending)),
+    defender: Math.min(
+      contest.dugIn === true ? MAX_DEFEND_DICE_BEHIND_A_LINE : MAX_DEFEND_DICE,
+      Math.max(0, contest.defending),
+    ),
   };
 }
 
 /**
  * Rolls one exchange. Dice are sorted and compared highest against highest;
- * the defender takes ties, which is what makes defending worth doing.
+ * the defender takes ties, which is what makes defending worth doing. A
+ * defender behind a line rolls one more die than usual.
  */
 export function resolveBattle(contest: Contest, dice: Dice): Battle {
   const count = diceFor(contest);
