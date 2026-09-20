@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { validateMap } from "./map";
+import { validateMap, centreOf } from "./map";
 import type { GameMap } from "./map";
-import { provingMap } from "../maps/proving";
+import { provingMap } from "../testing/provingMap";
 
 function mapWith(patch: (draft: GameMap) => GameMap): GameMap {
   return patch(structuredClone(provingMap) as GameMap);
@@ -64,5 +64,47 @@ describe("map validation", () => {
       ),
     }));
     expect(() => validateMap(broken)).toThrow(/mu/);
+  });
+});
+
+describe("where a territory's label goes", () => {
+  const square = [
+    { x: 0, y: 0 },
+    { x: 10, y: 0 },
+    { x: 10, y: 10 },
+    { x: 0, y: 10 },
+  ];
+
+  it("is the centre of the shape's area", () => {
+    expect(centreOf(square)).toEqual({ x: 5, y: 5 });
+  });
+
+  it("does not move because one stretch of coast is drawn in more detail", () => {
+    const sameSquare = [
+      { x: 0, y: 0 },
+      { x: 2, y: 0 },
+      { x: 4, y: 0 },
+      { x: 6, y: 0 },
+      { x: 8, y: 0 },
+      { x: 10, y: 0 },
+      { x: 10, y: 10 },
+      { x: 0, y: 10 },
+    ];
+    expect(centreOf(sameSquare)).toEqual(centreOf(square));
+  });
+
+  it("stays in the body of a territory that reaches out with a neck", () => {
+    // A ten-by-ten body with a narrow neck running off to the east.
+    const withNeck = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 10, y: 4 },
+      { x: 20, y: 4 },
+      { x: 20, y: 6 },
+      { x: 10, y: 6 },
+      { x: 10, y: 10 },
+      { x: 0, y: 10 },
+    ];
+    expect(centreOf(withNeck).x).toBeLessThan(7);
   });
 });

@@ -113,11 +113,31 @@ export function validateMap(map: GameMap): GameMap {
   return map;
 }
 
-/** Geometric centre of a shape, used to place a territory's label. */
+/**
+ * Centre of a shape's area, used to place a territory's label. Averaging the
+ * corners instead drags the centre towards whichever stretch of coast was
+ * drawn in the most detail, and towards any narrow neck a territory reaches
+ * out with — which is exactly where a label must not go.
+ */
 export function centreOf(shape: readonly Point[]): Point {
-  const total = shape.reduce(
-    (sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y }),
-    { x: 0, y: 0 },
-  );
-  return { x: total.x / shape.length, y: total.y / shape.length };
+  let twiceArea = 0;
+  let x = 0;
+  let y = 0;
+  for (let i = 0, j = shape.length - 1; i < shape.length; j = i++) {
+    const here = shape[i]!;
+    const previous = shape[j]!;
+    const cross = previous.x * here.y - here.x * previous.y;
+    twiceArea += cross;
+    x += (previous.x + here.x) * cross;
+    y += (previous.y + here.y) * cross;
+  }
+  // A shape with no area has no centre of area; its corners are all it has.
+  if (twiceArea === 0) {
+    const corners = shape.reduce(
+      (sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y }),
+      { x: 0, y: 0 },
+    );
+    return { x: corners.x / shape.length, y: corners.y / shape.length };
+  }
+  return { x: x / (3 * twiceArea), y: y / (3 * twiceArea) };
 }
