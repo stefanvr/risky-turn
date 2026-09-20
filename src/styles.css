@@ -144,6 +144,15 @@ body {
   cursor: pointer;
 }
 
+/* The phone changes hands in the colour of the player taking it: the name
+   alone is the easiest thing to miss at the one moment it must not be. */
+.board__handover[data-player="1"] { background: var(--player-1); }
+.board__handover[data-player="2"] { background: var(--player-2); }
+.board__handover[data-player="3"] { background: var(--player-3); }
+.board__handover[data-player="4"] { background: var(--player-4); }
+.board__handover[data-player="5"] { background: var(--player-5); }
+.board__handover[data-player="6"] { background: var(--player-6); }
+
 .board__build {
   min-height: 2.6rem;
   border: 0;
@@ -241,20 +250,31 @@ body {
   pointer-events: none;
 }
 
-.bomber__wing {
+/*
+ * A force is an icon and its count on one line. The two icons share a column
+ * and the two counts share another, so a cell's armies and bombers read as one
+ * block and neither number has to be remembered as belonging to something.
+ */
+.force {
+  pointer-events: none;
+}
+
+.force__icon {
   fill: var(--ink);
 }
 
-.territory__bomberCount {
+.force__count {
   fill: var(--ink);
   font-family: var(--font);
-  font-size: 6px;
   font-weight: 700;
-  pointer-events: none;
 }
 
-.territory__bombers {
-  pointer-events: none;
+.territory__armies .force__count {
+  font-size: 8px;
+}
+
+.territory__bombers .force__count {
+  font-size: 6px;
 }
 
 .territory__line {
@@ -279,34 +299,23 @@ body {
   opacity: 0.9;
 }
 
-.territory__name,
-.territory__armies {
+.territory__name {
   fill: var(--ink);
   font-family: var(--font);
+  font-size: 4.5px;
+  opacity: 0.85;
   pointer-events: none;
 }
 
-.territory__name {
-  font-size: 4.5px;
-  opacity: 0.85;
-}
-
-.territory__armies {
-  font-size: 9px;
-  font-weight: 700;
-}
-
 /*
- * Which force the next tap would strike with. The accent sits on the count
- * itself, so the answer is where the player is already looking, and the other
- * force steps back rather than disappearing.
+ * Which force the next tap would strike with. The accent sits on the icon and
+ * its count, so the answer is where the player is already looking, and the
+ * other force steps back rather than disappearing.
  */
-.territory__armies[data-poised="armies"] {
-  fill: var(--accent);
-}
-
-.territory__bombers[data-poised="bombers"] .bomber__wing,
-.territory__bombers[data-poised="bombers"] .territory__bomberCount {
+.territory__armies[data-poised="armies"] .force__icon,
+.territory__armies[data-poised="armies"] .force__count,
+.territory__bombers[data-poised="bombers"] .force__icon,
+.territory__bombers[data-poised="bombers"] .force__count {
   fill: var(--accent);
 }
 

@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { mountGame } from "./game";
 import { fixedDice } from "../domain/dice";
@@ -20,7 +22,7 @@ function tap(territory: string): void {
 }
 
 function armiesShown(territory: string): number {
-  const label = host.querySelector(`[data-armies="${territory}"]`);
+  const label = host.querySelector(`[data-armies-for="${territory}"] .force__count`);
   return Number(label?.textContent);
 }
 
@@ -165,6 +167,24 @@ describe("passing the phone", () => {
     expect(handoverButton().hidden).toBe(false);
     expect(mapHidden()).toBe(true);
     expect(handoverButton().textContent).toMatch(/blue/i);
+  });
+
+  it("hands the phone over in the colour of the player taking it", () => {
+    // Words alone are the one thing a player glancing at a passed phone can
+    // miss; the panel carries the same colour their territories do.
+    mountGame(host, stateWhere(board, { phase: "fortify" }), fixedDice([1]));
+    endPhaseButton().click();
+    expect(handoverButton().getAttribute("data-player")).toBe("2");
+  });
+
+  it("paints a handover for every player the map itself can paint", () => {
+    const stylesheet = readFileSync(join(process.cwd(), "src", "styles.css"), "utf8");
+    const numbers = (selector: string) =>
+      [...stylesheet.matchAll(new RegExp(`\\${selector}\\[data-player="(\\d)"\\]`, "g"))]
+        .map((match) => match[1])
+        .toSorted();
+    expect(numbers(".board__handover")).toEqual(numbers(".territory"));
+    expect(numbers(".territory").length).toBeGreaterThan(1);
   });
 
   it("uncovers it when the next player takes it up", () => {

@@ -76,15 +76,13 @@ export function presentGame(
   note?: string,
   armed?: TerritoryId | null,
 ): GamePresentation {
-  const numbers = new Map(state.players.map((player, index) => [player, index + 1]));
-
   const territories = state.map.territories.map((territory) => {
     const holding = state.holdings.get(territory.id)!;
     return {
       id: territory.id,
       name: territory.name,
       owner: holding.owner,
-      playerNumber: numbers.get(holding.owner) ?? 0,
+      playerNumber: playerNumberOf(state, holding.owner),
       armies: holding.armies,
       bombers: holding.bombers,
       // A cell with its squadron armed is still the cell that is acting, so
@@ -101,6 +99,15 @@ export function presentGame(
     canEndPhase: state.winner === null && state.reinforcementsLeft === 0,
     endPhaseLabel: state.phase === "fortify" ? "End turn" : "End phase",
   };
+}
+
+/**
+ * A player's position in turn order, from one, and zero for a player who is
+ * not in this game. It is what every colour in the interface is chosen by, so
+ * one player wears one colour wherever they appear.
+ */
+export function playerNumberOf(state: GameState, player: PlayerId): number {
+  return state.players.indexOf(player) + 1;
 }
 
 /**

@@ -51,7 +51,7 @@ describe("map view", () => {
   it("shows each territory's army count", () => {
     const view = createMapView(provingMap);
     view.show(board({ charlie: { armies: 7 } }));
-    expect(view.element.querySelector('[data-armies="charlie"]')?.textContent).toBe("7");
+    expect(countOf(view.element, "charlie", "armies").textContent).toBe("7");
   });
 
   it("marks each region with the number of the player holding it", () => {
@@ -84,10 +84,42 @@ describe("map view", () => {
     expect(lineOf("charlie")).toBe("none");
   });
 
+
+  it("draws each force as its own icon with its count beside it", () => {
+    const view = createMapView(provingMap);
+    view.show(board({ delta: { armies: 4, bombers: 2 } }));
+
+    expect(iconOf(view.element, "delta", "armies").getAttribute("data-force-icon")).toBe("tank");
+    expect(countOf(view.element, "delta", "armies").textContent).toBe("4");
+    expect(iconOf(view.element, "delta", "bombers").getAttribute("data-force-icon")).toBe("bomber");
+    expect(countOf(view.element, "delta", "bombers").textContent).toBe("2");
+  });
+
+  it("stands the icons in one column and the counts in another", () => {
+    const view = createMapView(provingMap);
+    view.show(board({ delta: { armies: 4, bombers: 2 } }));
+
+    const tank = placingOf(iconOf(view.element, "delta", "armies"));
+    const bomber = placingOf(iconOf(view.element, "delta", "bombers"));
+    const armyCount = countOf(view.element, "delta", "armies");
+    const bomberCount = countOf(view.element, "delta", "bombers");
+
+    expect(tank.x).toBe(bomber.x);
+    expect(coordinate(armyCount, "x")).toBe(coordinate(bomberCount, "x"));
+    // Bombers are the lower row, and each count sits on the centre line of the
+    // icon it belongs to rather than near it.
+    expect(bomber.y).toBeGreaterThan(tank.y);
+    for (const [count, icon] of [[armyCount, tank], [bomberCount, bomber]] as const) {
+      expect(coordinate(count, "y")).toBe(icon.y);
+      expect(count.getAttribute("dominant-baseline")).toBe("central");
+      expect(coordinate(count, "x")).toBeGreaterThan(icon.x);
+    }
+  });
+
   it("shows a squadron only where bombers stand", () => {
     const view = createMapView(provingMap);
     view.show(board({ delta: { bombers: 2 } }));
-    const at = (id: string) => view.element.querySelector(`[data-bombers-for="${id}"]`) as SVGElement;
+    const at = (id: string) => forceOf(view.element, id, "bombers");
     expect(at("delta").getAttribute("data-bombers")).toBe("2");
     expect(at("delta").style.display).toBe("");
     expect(at("alfa").style.display).toBe("none");
@@ -133,10 +165,8 @@ describe("map view", () => {
     const view = createMapView(provingMap);
     view.show(board({ alfa: { poised: "armies" }, bravo: { poised: "bombers", bombers: 2 } }));
 
-    const armiesOf = (id: string) =>
-      view.element.querySelector(`[data-armies="${id}"]`)?.getAttribute("data-poised");
-    const bombersOf = (id: string) =>
-      view.element.querySelector(`[data-bombers-for="${id}"]`)?.getAttribute("data-poised");
+    const armiesOf = (id: string) => forceOf(view.element, id, "armies").getAttribute("data-poised");
+    const bombersOf = (id: string) => forceOf(view.element, id, "bombers").getAttribute("data-poised");
 
     // The mark is carried by the numbers themselves, so one cell being poised
     // cannot light up the others.
@@ -170,4 +200,29 @@ function selectedIds(root: SVGSVGElement): string[] {
   return regions(root)
     .filter((region) => region.getAttribute("aria-pressed") === "true")
     .map((region) => region.dataset["territory"]!);
+}
+
+function forceOf(root: SVGSVGElement, id: string, force: "armies" | "bombers"): SVGElement {
+  const group = root.querySelector<SVGElement>(`[data-${force}-for="${id}"]`);
+  if (!group) throw new Error(`no ${force} drawn for ${id}`);
+  return group;
+}
+
+function iconOf(root: SVGSVGElement, id: string, force: "armies" | "bombers"): SVGElement {
+  return forceOf(root, id, force).querySelector<SVGElement>(".force__icon")!;
+}
+
+function countOf(root: SVGSVGElement, id: string, force: "armies" | "bombers"): SVGElement {
+  return forceOf(root, id, force).querySelector<SVGElement>(".force__count")!;
+}
+
+/** Where a glyph is placed. It is drawn about its own centre, so this is it. */
+function placingOf(icon: SVGElement): { x: number; y: number } {
+  const placed = icon.getAttribute("transform")?.match(/translate\(([-\d.]+) ([-\d.]+)\)/);
+  if (!placed) throw new Error(`glyph is not placed: ${icon.getAttribute("transform")}`);
+  return { x: Number(placed[1]), y: Number(placed[2]) };
+}
+
+function coordinate(element: SVGElement, name: string): number {
+  return Number(element.getAttribute(name));
 }

@@ -30,8 +30,8 @@ export function createMapView(map: GameMap): MapView {
   element.setAttribute("aria-label", `${map.name} map`);
 
   const regions = new Map<TerritoryId, SVGElement>();
-  const counts = new Map<TerritoryId, SVGElement>();
   const lines = new Map<TerritoryId, SVGElement>();
+  const armies = new Map<TerritoryId, { group: SVGElement; count: SVGElement }>();
   const squadrons = new Map<TerritoryId, { group: SVGElement; count: SVGElement }>();
   const marks = new Map<TerritoryId, SVGElement>();
 
@@ -62,11 +62,13 @@ export function createMapView(map: GameMap): MapView {
     lines.set(territory.id, line);
     works.append(line);
 
-    const { group, count } = drawLabel(territory);
-    counts.set(territory.id, count);
-    labels.append(group);
+    labels.append(drawName(territory));
 
-    const squadron = drawSquadron(territory);
+    const army = drawForce(territory, "armies");
+    armies.set(territory.id, army);
+    labels.append(army.group);
+
+    const squadron = drawForce(territory, "bombers");
     squadrons.set(territory.id, squadron);
     labels.append(squadron.group);
   }
@@ -80,15 +82,14 @@ export function createMapView(map: GameMap): MapView {
     show(territories) {
       for (const shown of territories) {
         const region = regions.get(shown.id);
-        const count = counts.get(shown.id);
+        const army = armies.get(shown.id);
         const line = lines.get(shown.id);
-        if (!region || !count || !line) continue;
+        if (!region || !army || !line) continue;
 
         line.setAttribute("data-line", shown.line);
 
         const squadron = squadrons.get(shown.id);
         if (squadron) {
-          squadron.group.setAttribute("data-bombers-for", shown.id);
           squadron.group.setAttribute("data-bombers", String(shown.bombers));
           squadron.group.style.display = shown.bombers > 0 ? "" : "none";
           squadron.group.setAttribute("data-poised", shown.poised ?? "none");
@@ -106,8 +107,8 @@ export function createMapView(map: GameMap): MapView {
           `${shown.name}, held by ${shown.owner}, ${armiesInWords(shown.armies)}` +
             `${bombersInWords(shown.bombers)}${lineInWords(shown.line)}`,
         );
-        count.textContent = String(shown.armies);
-        count.setAttribute("data-poised", shown.poised ?? "none");
+        army.count.textContent = String(shown.armies);
+        army.group.setAttribute("data-poised", shown.poised ?? "none");
       }
     },
 
@@ -135,27 +136,102 @@ function drawRegion(territory: Territory): SVGElement {
   return region;
 }
 
-function drawLabel(territory: Territory): { group: SVGElement; count: SVGElement } {
+function drawName(territory: Territory): SVGElement {
   const centre = centreOf(territory.shape);
-  const group = document.createElementNS(SVG_NS, "g");
-
   const name = document.createElementNS(SVG_NS, "text");
   name.setAttribute("class", "territory__name");
   name.setAttribute("x", String(centre.x));
-  name.setAttribute("y", String(centre.y - 4));
+  name.setAttribute("y", String(centre.y + NAME_Y));
   name.setAttribute("text-anchor", "middle");
   name.textContent = territory.name;
+  return name;
+}
+
+/**
+ * Force glyphs, as closed polygons in a 12 x 8 box centred on the origin. A
+ * glyph is therefore placed by its own centre, which is what lets a count set
+ * on the same line be aligned with it by construction rather than by eye.
+ */
+type Glyph = readonly (readonly (readonly [number, number])[])[];
+
+const TANK: Glyph = [
+  [[-5.6, 1.4], [5.6, 1.4], [5.0, 4.0], [-5.0, 4.0]],       // tracks
+  [[-4.8, -1.1], [3.0, -1.1], [4.8, 1.4], [-4.8, 1.4]],     // hull, sloped in front
+  [[-2.4, -3.0], [1.2, -3.0], [1.8, -1.1], [-2.8, -1.1]],   // turret
+  [[1.4, -2.5], [6.0, -2.5], [6.0, -1.7], [1.4, -1.7]],     // gun
+];
+
+const BOMBER: Glyph = [
+  [[-5.2, -0.7], [3.0, -0.7], [6.0, 0], [3.0, 0.7], [-5.2, 0.7]],  // fuselage, nose right
+  [[0.6, -0.5], [-3.0, -3.7], [-1.4, -3.7], [2.6, -0.5]],          // wing
+  [[0.6, 0.5], [-3.0, 3.7], [-1.4, 3.7], [2.6, 0.5]],              // wing
+  [[-4.6, -0.5], [-5.8, -2.1], [-4.8, -2.1], [-3.4, -0.5]],        // tailplane
+  [[-4.6, 0.5], [-5.8, 2.1], [-4.8, 2.1], [-3.4, 0.5]],            // tailplane
+];
+
+/**
+ * How a force is laid out under the name: the icons share one column and the
+ * counts another, so armies and bombers read as two rows of one thing rather
+ * than as two unrelated marks, and neither number has to be remembered as
+ * belonging to something.
+ */
+const NAME_Y = -6;
+const ICON_X = -5.5;
+const COUNT_X = 0.5;
+
+interface ForceStyle {
+  readonly glyph: Glyph;
+  readonly icon: string;
+  /** Where the row's centre line sits, relative to the cell's centre. */
+  readonly y: number;
+  readonly scale: number;
+}
+
+const FORCES: Readonly<Record<"armies" | "bombers", ForceStyle>> = {
+  armies: { glyph: TANK, icon: "tank", y: 3.5, scale: 0.8 },
+  bombers: { glyph: BOMBER, icon: "bomber", y: 12, scale: 0.75 },
+};
+
+/** An icon and its count on one line: what a cell has, of one kind. */
+function drawForce(
+  territory: Territory,
+  force: "armies" | "bombers",
+): { group: SVGElement; count: SVGElement } {
+  const centre = centreOf(territory.shape);
+  const style = FORCES[force];
+  const line = centre.y + style.y;
+
+  const group = document.createElementNS(SVG_NS, "g");
+  group.setAttribute("class", `force territory__${force}`);
+  group.setAttribute(`data-${force}-for`, territory.id);
+
+  const icon = document.createElementNS(SVG_NS, "path");
+  icon.setAttribute("class", "force__icon");
+  icon.setAttribute("data-force-icon", style.icon);
+  icon.setAttribute("d", pathOf(style.glyph));
+  icon.setAttribute(
+    "transform",
+    `translate(${centre.x + ICON_X} ${line}) scale(${style.scale})`,
+  );
 
   const count = document.createElementNS(SVG_NS, "text");
-  count.setAttribute("class", "territory__armies");
-  count.setAttribute("data-armies", territory.id);
-  count.setAttribute("x", String(centre.x));
-  count.setAttribute("y", String(centre.y + 6));
-  count.setAttribute("text-anchor", "middle");
+  count.setAttribute("class", "force__count");
+  count.setAttribute("x", String(centre.x + COUNT_X));
+  count.setAttribute("y", String(line));
+  count.setAttribute("text-anchor", "start");
+  // The count is centred on the glyph's own line rather than sitting on a
+  // baseline of its own, which is what keeps the pair level as digits grow.
+  count.setAttribute("dominant-baseline", "central");
   count.textContent = "0";
 
-  group.append(name, count);
+  group.append(icon, count);
   return { group, count };
+}
+
+function pathOf(glyph: Glyph): string {
+  return glyph
+    .map((polygon) => `M ${polygon.map(([x, y]) => `${x} ${y}`).join(" L ")} Z`)
+    .join(" ");
 }
 
 /**
@@ -184,33 +260,6 @@ function inset(shape: readonly Point[], fraction: number): Point[] {
     x: point.x + (centre.x - point.x) * fraction,
     y: point.y + (centre.y - point.y) * fraction,
   }));
-}
-
-/** A wing and a count, shown only where bombers actually stand. */
-function drawSquadron(territory: Territory): { group: SVGElement; count: SVGElement } {
-  const centre = centreOf(territory.shape);
-  const group = document.createElementNS(SVG_NS, "g");
-  group.setAttribute("class", "territory__bombers");
-  group.setAttribute("data-bombers-for", territory.id);
-  group.setAttribute("data-bombers", "0");
-  group.style.display = "none";
-
-  const wing = document.createElementNS(SVG_NS, "path");
-  wing.setAttribute("class", "bomber__wing");
-  const x = centre.x - 5;
-  const y = centre.y + 13;
-  wing.setAttribute("d", `M ${x} ${y} l 7 -3 l -7 -3 l 1.6 3 z`);
-
-  const count = document.createElementNS(SVG_NS, "text");
-  count.setAttribute("class", "territory__bomberCount");
-  count.setAttribute("x", String(centre.x + 5));
-  count.setAttribute("y", String(centre.y + 13));
-  count.setAttribute("text-anchor", "middle");
-  count.setAttribute("dominant-baseline", "central");
-  count.textContent = "0";
-
-  group.append(wing, count);
-  return { group, count };
 }
 
 const clipIdOf = (territory: Territory, scope: string) => `${scope}-clip-${territory.id}`;

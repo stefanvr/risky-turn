@@ -1,5 +1,5 @@
 import { createMapView } from "../render/mapView";
-import { describeOutcome, describeRaid, presentGame } from "./presentation";
+import { describeOutcome, describeRaid, playerNumberOf, presentGame } from "./presentation";
 import { drawDie } from "../render/dice";
 import type { BattleShown, RaidShown } from "./presentation";
 import { attack, bomb, buildBomber, deploy, digIn, endPhase, fortify, IllegalMoveError } from "../domain/turn";
@@ -70,7 +70,8 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
   host.append(map, handover, battleLine, status, buildControl, endControl);
 
   const render = (): void => {
-    const passing = awaiting !== null;
+    const taking = awaiting;
+    const passing = taking !== null;
 
     map.hidden = passing;
     endControl.hidden = passing;
@@ -78,8 +79,11 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
     battleLine.hidden = passing || lastAction === undefined;
     buildControl.hidden = passing || state.phase !== "deploy" || state.winner !== null;
 
-    if (passing) {
-      handover.textContent = `${awaiting}: tap to start your turn`;
+    if (taking !== null) {
+      handover.textContent = `${taking}: tap to start your turn`;
+      // The panel wears that player's own colour, so who is up is answered
+      // before the sentence on it is read.
+      handover.setAttribute("data-player", String(playerNumberOf(state, taking)));
       status.textContent = "Pass the phone on. The board is hidden until it is taken up again.";
       return;
     }
