@@ -130,6 +130,15 @@ describe("digging in", () => {
     expect(host.querySelector('[data-line-for="alfa"]')?.getAttribute("data-line")).toBe("building");
   });
 
+  it("says so when a territory starts digging in", () => {
+    mountGame(host, readyToFortify({ alfa: 6, bravo: 1, charlie: 1, delta: 1, echo: 1 }), fixedDice([1]));
+    tap("alfa");
+    tap("alfa");
+    expect(status()).toMatch(/alfa/i);
+    expect(status()).toMatch(/digging in/i);
+    expect(status()).not.toMatch(/fortify once/i);
+  });
+
   it("says why a thin garrison cannot dig in", () => {
     mountGame(host, readyToFortify({ alfa: 3, bravo: 1, charlie: 1, delta: 1, echo: 1 }), fixedDice([1]));
     tap("alfa");

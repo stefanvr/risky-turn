@@ -48,6 +48,12 @@ describe("what the status line says", () => {
     expect(presentGame(stateWhere(board, { phase: "fortify" }), null).status).toMatch(/fortif/i);
   });
 
+  it("stops offering a fortify once the turn's fortify is spent", () => {
+    const spent = stateWhere(board, { phase: "fortify", hasFortified: true });
+    expect(presentGame(spent, null).status).not.toMatch(/fortify once/i);
+    expect(presentGame(spent, null).status).toMatch(/end the turn/i);
+  });
+
   it("announces the winner once the game is over", () => {
     const won = { ...stateWhere(board), winner: "red" };
     expect(presentGame(won, null).status).toMatch(/red/i);

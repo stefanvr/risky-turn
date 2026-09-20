@@ -46,11 +46,18 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
     endControl.disabled = !shown.canEndPhase;
   };
 
-  /** Runs a move, keeping the board unchanged and reporting why if it fails. */
-  const tryMove = (move: () => void): void => {
+  const nameOf = (territory: TerritoryId): string =>
+    state.map.territories.find((candidate) => candidate.id === territory)?.name ?? territory;
+
+  /**
+   * Runs a move and says what came of it. A move that the rules reject leaves
+   * the board alone and reports why; a move that succeeds says so, because a
+   * change the player cannot see is a change they will not believe happened.
+   */
+  const tryMove = (move: () => string | void): void => {
     note = undefined;
     try {
-      move();
+      note = move() ?? undefined;
     } catch (error) {
       if (!(error instanceof IllegalMoveError)) throw error;
       note = error.message;
@@ -100,14 +107,16 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
              * The status line offers it, so it is not left to be discovered.
              */
             state = digIn(state, from);
-            return;
+            return `${nameOf(from)} is digging in. It holds from the end of your next turn.`;
           }
           /*
            * PROVISIONAL: a fortify moves everything that can leave, keeping one
            * army behind, rather than asking how many. It is one gesture instead
            * of a slider, at the cost of the finer choice.
            */
-          state = fortify(state, from, tapped, holdingOf(state, from).armies - 1);
+          const moved = holdingOf(state, from).armies - 1;
+          state = fortify(state, from, tapped, moved);
+          return `${moved === 1 ? "1 army" : `${moved} armies`} moved from ${nameOf(from)} to ${nameOf(tapped)}.`;
         });
         return;
     }

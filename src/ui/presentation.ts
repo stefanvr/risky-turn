@@ -91,7 +91,9 @@ function statusOf(state: GameState): string {
     case "attack":
       return `${state.currentPlayer}: attack, or end the phase.`;
     case "fortify":
-      return `${state.currentPlayer}: fortify once, or end the turn.`;
+      return state.hasFortified
+        ? `${state.currentPlayer}: nothing more this turn. End the turn.`
+        : `${state.currentPlayer}: fortify once, or end the turn.`;
   }
 }
 
