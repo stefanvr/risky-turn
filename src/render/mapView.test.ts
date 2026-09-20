@@ -227,3 +227,28 @@ function placingOf(icon: SVGElement): { x: number; y: number } {
 function coordinate(element: SVGElement, name: string): number {
   return Number(element.getAttribute(name));
 }
+
+describe("continents on the board", () => {
+  it("draws a coast for each continent, above the ground it encloses", () => {
+    const view = createMapView(provingMap);
+    const drawn = [...view.element.querySelectorAll("[data-coast-for]")];
+    expect(drawn.map((path) => path.getAttribute("data-coast-for")).toSorted()).toEqual(
+      provingMap.continents.map((continent) => continent.id).toSorted(),
+    );
+    const regions = [...view.element.querySelectorAll("[data-territory]")];
+    const order = [...view.element.querySelectorAll("*")];
+    expect(order.indexOf(drawn[0]!)).toBeGreaterThan(order.indexOf(regions.at(-1)!));
+  });
+
+  it("closes every loop it draws", () => {
+    const view = createMapView(provingMap);
+    for (const path of view.element.querySelectorAll("[data-coast-for]")) {
+      expect(path.getAttribute("d")).toMatch(/Z$/);
+    }
+  });
+
+  it("marks a continent's coast apart from a territory's own border", () => {
+    const stylesheet = readFileSync(join(process.cwd(), "src", "styles.css"), "utf8");
+    expect(stylesheet).toMatch(/\.continent__coast\s*\{[^}]+\}/);
+  });
+});
