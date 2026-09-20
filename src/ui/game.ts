@@ -95,6 +95,14 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
   buildControl.setAttribute("data-role", "build-bomber");
   buildControl.hidden = true;
 
+  // The button is only offered while armies are being placed, but its berth
+  // stays for the whole turn: a map that grows the moment the phase changes
+  // moves every target on it under a thumb already reaching for one.
+  const buildSlot = document.createElement("div");
+  buildSlot.className = "board__berth";
+  buildSlot.setAttribute("data-role", "build-slot");
+  buildSlot.append(buildControl);
+
   const endControl = document.createElement("button");
   endControl.className = "board__end";
   endControl.type = "button";
@@ -106,7 +114,7 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
   handover.setAttribute("data-role", "handover");
   handover.hidden = true;
 
-  host.append(bar, legend, map, handover, battleLine, status, buildControl, endControl);
+  host.append(bar, legend, map, handover, battleLine, status, buildSlot, endControl);
   fillLegend(legend, initial);
 
   const render = (): void => {
@@ -128,8 +136,9 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
     status.hidden = reading;
     handover.hidden = !passing;
     battleLine.hidden = passing || reading || lastAction === undefined;
-    buildControl.hidden =
-      passing || reading || state.phase !== "deploy" || state.winner !== null;
+    // The berth leaves the screen only when the board itself does.
+    buildSlot.hidden = passing || reading;
+    buildControl.hidden = state.phase !== "deploy" || state.winner !== null;
 
     if (taking !== null) {
       handover.textContent = `${taking}: tap to start your turn`;

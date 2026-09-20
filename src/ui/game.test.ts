@@ -273,6 +273,15 @@ describe("bombers", () => {
     expect(buildButton().hidden).toBe(true);
   });
 
+  it("holds the control's place on screen once the phase it belongs to is over", () => {
+    mountGame(host, stateWhere(board, { phase: "attack" }), fixedDice([1]));
+    const slot = buildButton().closest('[data-role="build-slot"]') as HTMLElement | null;
+    // The button goes; its berth stays, so the map below it is the same size
+    // in every phase of a turn and does not shift under a thumb mid-move.
+    expect(slot).not.toBeNull();
+    expect(slot!.hidden).toBe(false);
+  });
+
   it("sends a squadron when its territory is tapped twice in the attack phase", () => {
     const armed = stateWhere(board, {
       phase: "attack",

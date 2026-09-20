@@ -277,7 +277,18 @@ body {
 .board__handover[data-player="5"] { background: var(--player-5); }
 .board__handover[data-player="6"] { background: var(--player-6); }
 
+/*
+ * The place the build control sits in, kept through the turn whether or not
+ * the control is in it, so that the map above it is one size all turn.
+ */
+.board__berth {
+  display: flex;
+  flex-direction: column;
+  min-height: 2.6rem;
+}
+
 .board__build {
+  flex: 1;
   min-height: 2.6rem;
   border: 0;
   border-radius: 0.6rem;
