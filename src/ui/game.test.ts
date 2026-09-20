@@ -334,3 +334,44 @@ describe("moving through the turn", () => {
     expect(endPhaseButton().disabled).toBe(true);
   });
 });
+
+describe("arming a squadron", () => {
+  const armed = { ...board, delta: "red", echo: "blue" } as const;
+
+  function reachOf(territory: string): string {
+    const region = host.querySelector<SVGElement>(`[data-territory="${territory}"]`);
+    return region?.getAttribute("data-reach") ?? "none";
+  }
+
+  it("marks every region with whether the squadron can reach it", () => {
+    mountGame(
+      host,
+      stateWhere(armed, { phase: "attack", armies: { alfa: 3 }, bombers: { alfa: 2 } }),
+      fixedDice([6, 6]),
+    );
+    tap("alfa");
+    tap("alfa");
+    expect(reachOf("echo")).toBe("in");
+    expect(reachOf("alfa")).toBe("in");
+    expect(reachOf("bravo")).toBe("in");
+  });
+
+  it("paints what is out of reach differently from what is in it", () => {
+    const stylesheet = readFileSync(join(process.cwd(), "src", "styles.css"), "utf8");
+    expect(stylesheet).toMatch(/\.territory\[data-reach="out"\]\s*\{[^}]+\}/);
+  });
+
+  it("makes the board whole again once the run has flown", () => {
+    mountGame(
+      host,
+      stateWhere(armed, { phase: "attack", armies: { alfa: 3, echo: 4 }, bombers: { alfa: 2 } }),
+      fixedDice([6, 6]),
+    );
+    tap("alfa");
+    tap("alfa");
+    tap("echo");
+    for (const territory of Object.keys(armed)) {
+      expect(reachOf(territory), `${territory} stayed marked`).toBe("none");
+    }
+  });
+});
