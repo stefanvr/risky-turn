@@ -18,6 +18,11 @@ export interface Territory {
   readonly continent: ContinentId;
   /** Territories an army may attack or move into from here. Always mutual. */
   readonly neighbours: readonly TerritoryId[];
+  /**
+   * Territories reachable across water. Bombers cross these; armies cannot,
+   * so a sea link is never also a land border. Always mutual.
+   */
+  readonly seaLinks?: readonly TerritoryId[];
   /** Outline in map coordinates, bounded by the map's width and height. */
   readonly shape: readonly Point[];
 }
@@ -80,6 +85,26 @@ export function validateMap(map: GameMap): GameMap {
         reject(
           `border "${territory.id}"–"${neighbour}" is not symmetric: ` +
             `"${neighbour}" does not border "${territory.id}"`,
+        );
+      }
+    }
+
+    for (const across of territory.seaLinks ?? []) {
+      if (across === territory.id) {
+        reject(`territory "${territory.id}" is linked by sea to itself`);
+      }
+      const other = byId.get(across);
+      if (!other) {
+        reject(`territory "${territory.id}" is linked by sea to unknown territory "${across}"`);
+        continue;
+      }
+      if (territory.neighbours.includes(across)) {
+        reject(`sea link "${territory.id}"–"${across}" runs where a land border already does`);
+      }
+      if (!(other.seaLinks ?? []).includes(territory.id)) {
+        reject(
+          `sea link "${territory.id}"–"${across}" is not symmetric: ` +
+            `"${across}" is not linked back to "${territory.id}"`,
         );
       }
     }

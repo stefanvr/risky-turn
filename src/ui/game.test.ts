@@ -222,6 +222,77 @@ describe("showing an exchange", () => {
   });
 });
 
+describe("bombers", () => {
+  const buildButton = () => host.querySelector<HTMLButtonElement>('[data-role="build-bomber"]')!;
+  const squadron = (id: string) =>
+    host.querySelector(`[data-bombers-for="${id}"]`)?.getAttribute("data-bombers");
+
+  it("offers a bomber only while there are reinforcements to spend", () => {
+    mountGame(host, stateWhere(board, { reinforcementsLeft: 3 }), fixedDice([1]));
+    expect(buildButton().hidden).toBe(false);
+    expect(buildButton().disabled).toBe(false);
+  });
+
+  it("will not offer one that cannot be paid for", () => {
+    mountGame(host, stateWhere(board, { reinforcementsLeft: 2 }), fixedDice([1]));
+    expect(buildButton().disabled).toBe(true);
+  });
+
+  it("stations a bomber where the next tap lands", () => {
+    mountGame(host, stateWhere(board, { reinforcementsLeft: 3 }), fixedDice([1]));
+    buildButton().click();
+    expect(status()).toMatch(/station a bomber/i);
+    tap("alfa");
+    expect(squadron("alfa")).toBe("1");
+    expect(status()).toMatch(/bomber is stationed in alfa/i);
+  });
+
+  it("keeps the build control out of the way outside the deploy phase", () => {
+    mountGame(host, stateWhere(board, { phase: "attack" }), fixedDice([1]));
+    expect(buildButton().hidden).toBe(true);
+  });
+
+  it("sends a squadron when its territory is tapped twice in the attack phase", () => {
+    const armed = stateWhere(board, {
+      phase: "attack",
+      armies: { alfa: 2, bravo: 4 },
+      bombers: { alfa: 2 },
+    });
+    mountGame(host, armed, fixedDice([6, 5]));
+    tap("alfa");
+    tap("alfa");
+    expect(status()).toMatch(/choose what to bomb/i);
+    tap("bravo");
+    expect(armiesShown("bravo")).toBe(2);
+    expect(squadron("alfa")).toBe("2");
+  });
+
+  it("shows the run's dice and what it destroyed", () => {
+    const armed = stateWhere(board, {
+      phase: "attack",
+      armies: { alfa: 2, bravo: 4 },
+      bombers: { alfa: 2 },
+    });
+    mountGame(host, armed, fixedDice([6, 5]));
+    tap("alfa");
+    tap("alfa");
+    tap("bravo");
+
+    const line = host.querySelector('[data-role="battle"]') as HTMLElement;
+    const faces = [...line.querySelectorAll("[data-die]")].map((d) => d.getAttribute("data-die"));
+    expect(faces).toEqual(["6", "5"]);
+    expect(line.textContent).toMatch(/bombs bravo/i);
+    expect(line.textContent).toMatch(/2 armies destroyed/i);
+  });
+
+  it("says so when a territory has no bombers to send", () => {
+    mountGame(host, stateWhere(board, { phase: "attack", armies: { alfa: 3 } }), fixedDice([1]));
+    tap("alfa");
+    tap("alfa");
+    expect(status()).toMatch(/no bomber/i);
+  });
+});
+
 describe("moving through the turn", () => {
   it("runs deploy, attack, fortify, then hands over to the next player", () => {
     mountGame(host, stateWhere(board, { reinforcementsLeft: 0 }), fixedDice([1]));

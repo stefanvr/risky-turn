@@ -13,14 +13,14 @@ import type { GameState, PlayerId } from "../domain/game";
  * itself could never reach — and if the rules change underneath it, it breaks
  * rather than quietly lying.
  */
-export type FixtureName = "found-line";
+export type FixtureName = "found-line" | "bombers-vs-line";
 
 export class UnknownFixtureError extends Error {
   override readonly name = "UnknownFixtureError";
 }
 
 export function fixtureNames(): readonly string[] {
-  return ["found-line"];
+  return ["found-line", "bombers-vs-line"];
 }
 
 export function fixtureNamed(
@@ -31,11 +31,40 @@ export function fixtureNamed(
   switch (name) {
     case "found-line":
       return foundLine(map, players);
+    case "bombers-vs-line":
+      return bombersAgainstALine(map, players);
     default:
       throw new UnknownFixtureError(
         `no fixture named "${name}"; try one of: ${fixtureNames().join(", ")}`,
       );
   }
+}
+
+/**
+ * The interlock: the opponent is dug in on Echo, across water that no army can
+ * cross, and the player has a squadron on Alfa that can reach it anyway. Two
+ * good rolls take the garrison under its threshold and the line falls.
+ */
+function bombersAgainstALine(map: GameMap, players: readonly PlayerId[]): GameState {
+  const player = players[0]!;
+  const opponent = players[1]!;
+  const opened = newGame(map, players, seededRandom(42));
+
+  let staged = withHolding(opened, "alfa", {
+    owner: player,
+    armies: 3,
+    line: null,
+    bombers: 3,
+    bombersFlown: false,
+  });
+  staged = withHolding(staged, "echo", {
+    owner: opponent,
+    armies: 6,
+    line: { turnsUntilHolding: 0, revealed: true },
+    bombers: 0,
+    bombersFlown: false,
+  });
+  return staged;
 }
 
 /**
@@ -51,5 +80,7 @@ function foundLine(map: GameMap, players: readonly PlayerId[]): GameState {
     owner: opponent,
     armies: 8,
     line: { turnsUntilHolding: 0, revealed: true },
+    bombers: 0,
+    bombersFlown: false,
   });
 }

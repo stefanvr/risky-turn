@@ -5,6 +5,10 @@ import type { GameMap } from "../domain/map";
  * a tappable region on screen. It is not the map the game is played on; see
  * PRODUCT.md, which settles one fixed hand-authored world map. Delete this
  * once that map exists.
+ *
+ * Alfa and Echo are linked by sea: no army can cross between them, but a
+ * bomber can. Every territory here happens to be within a bomber's overland
+ * reach as well, so the link's own value shows in what ground cannot do.
  */
 export const provingMap: GameMap = {
   id: "proving",
@@ -21,6 +25,7 @@ export const provingMap: GameMap = {
       name: "Alfa",
       continent: "north",
       neighbours: ["bravo", "charlie"],
+      seaLinks: ["echo"],
       shape: [
         { x: 8, y: 8 },
         { x: 50, y: 8 },
@@ -69,6 +74,7 @@ export const provingMap: GameMap = {
       name: "Echo",
       continent: "south",
       neighbours: ["charlie", "delta"],
+      seaLinks: ["alfa"],
       shape: [
         { x: 50, y: 100 },
         { x: 92, y: 100 },

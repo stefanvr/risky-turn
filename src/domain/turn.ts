@@ -1,4 +1,6 @@
 import {
+  BOMBER_COST,
+  BOMBS_KILL_FROM,
   LINE_MINIMUM_GARRISON,
   PHASE_ORDER,
   TURNS_TO_HARDEN,
@@ -10,6 +12,7 @@ import {
 } from "./game";
 import { reinforcementsFor } from "./reinforcements";
 import { resolveBattle } from "./combat";
+import { withinBomberReach } from "./reach";
 import type { Battle } from "./combat";
 import type { Dice } from "./dice";
 import type { GameState, PlayerId, Phase } from "./game";
@@ -48,6 +51,66 @@ export function deploy(
     ...withHolding(state, territory, { ...holding, armies: holding.armies + armies }),
     reinforcementsLeft: state.reinforcementsLeft - armies,
   };
+}
+
+/** Builds a bomber, paid for out of this turn's reinforcements. */
+export function buildBomber(state: GameState, territory: TerritoryId): GameState {
+  requirePhase(state, "deploy");
+  const holding = holdingOf(state, territory);
+  if (holding.owner !== state.currentPlayer) {
+    illegal(`${state.currentPlayer} does not hold ${territory}`);
+  }
+  if (state.reinforcementsLeft < BOMBER_COST) {
+    illegal(`a bomber costs ${BOMBER_COST} reinforcements`);
+  }
+
+  return {
+    ...withHolding(state, territory, { ...holding, bombers: holding.bombers + 1 }),
+    reinforcementsLeft: state.reinforcementsLeft - BOMBER_COST,
+  };
+}
+
+export interface BombingResult {
+  readonly state: GameState;
+  readonly dice: readonly number[];
+  readonly kills: number;
+}
+
+/**
+ * Sends every bomber standing in `from` against `to`. Each rolls once and a
+ * high face kills an army. Nothing rolls back, so no bomber is ever lost — and
+ * the run cannot take the last defender, because bombers take no ground.
+ */
+export function bomb(
+  state: GameState,
+  from: TerritoryId,
+  to: TerritoryId,
+  dice: Dice,
+): BombingResult {
+  requirePhase(state, "attack");
+  const base = holdingOf(state, from);
+  const target = holdingOf(state, to);
+
+  if (base.owner !== state.currentPlayer) {
+    illegal(`${state.currentPlayer} does not hold ${from}`);
+  }
+  if (base.bombers < 1) illegal(`${from} has no bomber to fly`);
+  if (base.bombersFlown) illegal(`the bombers at ${from} have already flown this turn`);
+  if (target.owner === state.currentPlayer) {
+    illegal(`${to} is the player's own ground`);
+  }
+  if (!withinBomberReach(state.map, from, to)) {
+    illegal(`${to} is beyond the reach of bombers at ${from}`);
+  }
+
+  const rolled = Array.from({ length: base.bombers }, () => dice.roll());
+  const hits = rolled.filter((die) => die >= BOMBS_KILL_FROM).length;
+  const kills = Math.min(hits, target.armies - 1);
+
+  let next = withHolding(state, from, { ...base, bombersFlown: true });
+  next = withHolding(next, to, { ...target, armies: target.armies - kills });
+
+  return { state: next, dice: rolled, kills };
 }
 
 export interface AttackResult {
@@ -109,13 +172,22 @@ export function attack(
      * but one army. The alternative is asking how many to move, which is a
      * second decision and a second dialog on a phone.
      */
-    next = withHolding(next, from, { owner: attacker.owner, armies: 1, line: null });
+    next = withHolding(next, from, {
+      ...attacker,
+      owner: attacker.owner,
+      armies: 1,
+      line: null,
+    });
     // Ground taken is ground without a line: the works were manned by the
     // player who lost it.
     next = withHolding(next, to, {
       owner: attacker.owner,
       armies: survivingAttackers - 1,
       line: null,
+      // Bombers do not change hands: they are destroyed with the field they
+      // were standing on.
+      bombers: 0,
+      bombersFlown: false,
     });
   } else {
     // An attack that runs into works learns they are there.
@@ -221,9 +293,20 @@ function hardenLinesOf(state: GameState, player: PlayerId): GameState {
   return next;
 }
 
+/** Every turn the player's bombers are fuelled again. */
+function groundBombersOf(state: GameState, player: PlayerId): GameState {
+  let next = state;
+  for (const [territory, holding] of state.holdings) {
+    if (holding.owner !== player || !holding.bombersFlown) continue;
+    next = withHolding(next, territory, { ...holding, bombersFlown: false });
+  }
+  return next;
+}
+
 function beginTurnOf(state: GameState, player: PlayerId): GameState {
+  const rested = groundBombersOf(state, player);
   const started: GameState = {
-    ...state,
+    ...rested,
     currentPlayer: player,
     phase: "deploy",
     hasFortified: false,

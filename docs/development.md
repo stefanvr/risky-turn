@@ -21,8 +21,12 @@ The deal is random but seeded, and the seed comes from the address:
 ```
 
 The same seed always deals the same game, so a position worth looking at twice
-can be reached twice. Without it the clock supplies a seed. This works in every
-build, including the published one.
+can be reached twice — the dice follow from it as well, so a whole sequence of
+battles and bombing runs repeats exactly. Without it the clock supplies a seed.
+This works in every build, including the published one.
+
+Combined with a fixture, it is how a specific outcome gets looked at:
+`?fixture=bombers-vs-line&seed=4` rolls two hits and breaks the line.
 
 ## Fixtures: putting a position on the board on purpose
 
@@ -36,6 +40,7 @@ particular choice. A fixture places one directly:
 | fixture | position |
 |---|---|
 | `found-line` | The opponent holds a defensive line on Bravo, already discovered, garrisoned and rolling three dice. |
+| `bombers-vs-line` | The interlock: the opponent is dug in on Echo across water no army can cross, and a squadron of three sits on Alfa that can reach it anyway. |
 
 Fixtures are built from `newGame` and adjusted through the same `withHolding`
 the rules use, so a fixture cannot reach a position the game itself could not,

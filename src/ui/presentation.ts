@@ -9,12 +9,26 @@ export interface TerritoryPresentation {
   /** Position in turn order, from one, so a player keeps one colour all game. */
   readonly playerNumber: number;
   readonly armies: number;
+  readonly bombers: number;
   readonly selected: boolean;
   /** "building" while a declared line is still arming, "holding" once it protects. */
   readonly line: LineShown;
 }
 
 export type LineShown = "none" | "building" | "holding";
+
+export interface RaidShown {
+  readonly attacker: PlayerId;
+  readonly target: string;
+  readonly dice: readonly number[];
+  readonly kills: number;
+}
+
+/** What a bombing run came to, in words. The dice are drawn by the view. */
+export function describeRaid(raid: RaidShown): string {
+  if (raid.kills === 0) return `${raid.target} is untouched`;
+  return `${armies(raid.kills)} destroyed in ${raid.target}`;
+}
 
 export interface BattleShown {
   readonly attacker: PlayerId;
@@ -67,6 +81,7 @@ export function presentGame(
       owner: holding.owner,
       playerNumber: numbers.get(holding.owner) ?? 0,
       armies: holding.armies,
+      bombers: holding.bombers,
       selected: territory.id === selected,
       line: lineShown(holding, state.currentPlayer),
     };
@@ -91,7 +106,11 @@ function selectionPrompt(state: GameState, selected: TerritoryId | null): string
   if (holding === undefined) return undefined;
   const name = state.map.territories.find((t) => t.id === selected)?.name ?? selected;
 
-  if (state.phase === "attack") return `${name} selected. Tap a bordering enemy to attack.`;
+  if (state.phase === "attack") {
+    return holding.bombers > 0 && !holding.bombersFlown
+      ? `${name} selected. Tap a bordering enemy to attack, or tap it again to send its bombers.`
+      : `${name} selected. Tap a bordering enemy to attack.`;
+  }
   if (state.phase !== "fortify") return undefined;
 
   return holding.line === null && holding.armies >= LINE_MINIMUM_GARRISON

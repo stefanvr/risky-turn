@@ -57,6 +57,8 @@ export function newGame(
       owner,
       armies: armies.get(territory.id)!,
       line: null,
+      bombers: 0,
+      bombersFlown: false,
     });
   }
 

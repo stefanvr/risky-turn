@@ -1,12 +1,17 @@
 import { createMapView } from "../render/mapView";
-import { describeOutcome, presentGame } from "./presentation";
+import { describeOutcome, describeRaid, presentGame } from "./presentation";
 import { drawDie } from "../render/dice";
-import type { BattleShown } from "./presentation";
-import { attack, deploy, digIn, endPhase, fortify, IllegalMoveError } from "../domain/turn";
-import { holdingOf } from "../domain/game";
+import type { BattleShown, RaidShown } from "./presentation";
+import { attack, bomb, buildBomber, deploy, digIn, endPhase, fortify, IllegalMoveError } from "../domain/turn";
+import { BOMBER_COST, holdingOf } from "../domain/game";
 import type { Dice } from "../domain/dice";
 import type { GameState, PlayerId } from "../domain/game";
 import type { TerritoryId } from "../domain/map";
+
+/** The last thing that happened worth putting under the map. */
+type LastAction =
+  | { readonly kind: "battle"; readonly battle: BattleShown }
+  | { readonly kind: "raid"; readonly raid: RaidShown };
 
 export interface MountedGame {
   state(): GameState;
@@ -21,7 +26,11 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
   let state = initial;
   let selected: TerritoryId | null = null;
   let note: string | undefined;
-  let lastBattle: BattleShown | undefined;
+  let lastAction: LastAction | undefined;
+  /** Set while the player has chosen to spend reinforcements on a bomber. */
+  let buyingBomber = false;
+  /** Set while a territory's bombers are chosen but their target is not. */
+  let bombingFrom: TerritoryId | null = null;
   /** Set while the phone is between players, so no one reads the other's board. */
   let awaiting: PlayerId | null = null;
 
@@ -41,6 +50,12 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
   battleLine.setAttribute("data-role", "battle");
   battleLine.setAttribute("role", "status");
 
+  const buildControl = document.createElement("button");
+  buildControl.className = "board__build";
+  buildControl.type = "button";
+  buildControl.setAttribute("data-role", "build-bomber");
+  buildControl.hidden = true;
+
   const endControl = document.createElement("button");
   endControl.className = "board__end";
   endControl.type = "button";
@@ -52,7 +67,7 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
   handover.setAttribute("data-role", "handover");
   handover.hidden = true;
 
-  host.append(map, handover, battleLine, status, endControl);
+  host.append(map, handover, battleLine, status, buildControl, endControl);
 
   const render = (): void => {
     const passing = awaiting !== null;
@@ -60,7 +75,8 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
     map.hidden = passing;
     endControl.hidden = passing;
     handover.hidden = !passing;
-    battleLine.hidden = passing || lastBattle === undefined;
+    battleLine.hidden = passing || lastAction === undefined;
+    buildControl.hidden = passing || state.phase !== "deploy" || state.winner !== null;
 
     if (passing) {
       handover.textContent = `${awaiting}: tap to start your turn`;
@@ -70,8 +86,15 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
 
     const shown = presentGame(state, selected, note);
     view.show(shown.territories);
-    status.textContent = shown.status;
-    showBattle(battleLine, lastBattle);
+    status.textContent = buyingBomber
+      ? `Tap one of your territories to station a bomber there.`
+      : shown.status;
+    showAction(battleLine, lastAction);
+    buildControl.textContent = buyingBomber
+      ? "Choose where"
+      : `Build a bomber (${BOMBER_COST})`;
+    buildControl.disabled = state.reinforcementsLeft < BOMBER_COST;
+    buildControl.setAttribute("aria-pressed", String(buyingBomber));
     endControl.textContent = shown.endPhaseLabel;
     endControl.disabled = !shown.canEndPhase;
   };
@@ -101,15 +124,58 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
 
     switch (state.phase) {
       case "deploy":
+        if (buyingBomber) {
+          tryMove(() => {
+            state = buildBomber(state, tapped);
+            buyingBomber = false;
+            return `A bomber is stationed in ${nameOf(tapped)}.`;
+          });
+          return;
+        }
         tryMove(() => {
           state = deploy(state, tapped, 1);
         });
         return;
 
       case "attack":
+        // Bombers in the air are asked for their target before anything else,
+        // or the tap that names it would be read as choosing a new source.
+        if (bombingFrom !== null) {
+          tryMove(() => {
+            const from = bombingFrom!;
+            bombingFrom = null;
+            const run = bomb(state, from, tapped, dice);
+            state = run.state;
+            lastAction = {
+              kind: "raid",
+              raid: {
+                attacker: state.currentPlayer,
+                target: nameOf(tapped),
+                dice: run.dice,
+                kills: run.kills,
+              },
+            };
+          });
+          return;
+        }
         if (selected === null) {
           tryMove(() => {
             selected = chooseSource(state, tapped, "attack from");
+          });
+          return;
+        }
+        if (selected === tapped) {
+          // A second tap on the chosen territory sends its bombers instead of
+          // its armies: the same idiom as digging in during a fortify.
+          tryMove(() => {
+            const base = holdingOf(state, tapped);
+            if (base.bombers < 1) throw new IllegalMoveError(`${tapped} has no bomber to fly`);
+            if (base.bombersFlown) {
+              throw new IllegalMoveError(`the bombers at ${tapped} have already flown this turn`);
+            }
+            selected = null;
+            bombingFrom = tapped;
+            return `${nameOf(tapped)}: choose what to bomb.`;
           });
           return;
         }
@@ -119,14 +185,17 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
           const defender = holdingOf(state, tapped).owner;
           const result = attack(state, from, tapped, dice);
           state = result.state;
-          lastBattle = {
-            attacker: state.currentPlayer,
-            defender,
-            attackerDice: result.battle.attackerDice,
-            defenderDice: result.battle.defenderDice,
-            attackerLosses: result.battle.attackerLosses,
-            defenderLosses: result.battle.defenderLosses,
-            conquered: result.conquered,
+          lastAction = {
+            kind: "battle",
+            battle: {
+              attacker: state.currentPlayer,
+              defender,
+              attackerDice: result.battle.attackerDice,
+              defenderDice: result.battle.defenderDice,
+              attackerLosses: result.battle.attackerLosses,
+              defenderLosses: result.battle.defenderLosses,
+              conquered: result.conquered,
+            },
           };
         });
         return;
@@ -171,10 +240,19 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
     });
     if (state.currentPlayer !== before && state.winner === null) {
       awaiting = state.currentPlayer;
-      lastBattle = undefined;
+      lastAction = undefined;
       note = undefined;
+      buyingBomber = false;
+      bombingFrom = null;
       render();
     }
+  });
+
+  buildControl.addEventListener("click", () => {
+    buyingBomber = !buyingBomber;
+    selected = null;
+    note = undefined;
+    render();
   });
 
   handover.addEventListener("click", () => {
@@ -187,11 +265,13 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
   return { state: () => state };
 }
 
-/** Rebuilds the line of dice under the map from the last exchange. */
-function showBattle(into: HTMLElement, battle: BattleShown | undefined): void {
+/** Rebuilds the line of dice under the map from the last thing that happened. */
+function showAction(into: HTMLElement, action: LastAction | undefined): void {
   into.replaceChildren();
-  if (battle === undefined) return;
+  if (action === undefined) return;
+  if (action.kind === "raid") return showRaid(into, action.raid);
 
+  const battle = action.battle;
   const side = (name: string, dice: readonly number[]): DocumentFragment => {
     const part = document.createDocumentFragment();
     const label = document.createElement("span");
@@ -216,6 +296,21 @@ function showBattle(into: HTMLElement, battle: BattleShown | undefined): void {
     side(battle.defender, battle.defenderDice),
     outcome,
   );
+}
+
+/** A bombing run: one side, its dice, and what it destroyed. */
+function showRaid(into: HTMLElement, raid: RaidShown): void {
+  const label = document.createElement("span");
+  label.className = "board__side";
+  label.textContent = `${raid.attacker} bombs ${raid.target}`;
+  into.append(label);
+
+  for (const value of raid.dice) into.append(drawDie(value));
+
+  const outcome = document.createElement("span");
+  outcome.className = "board__outcome";
+  outcome.textContent = describeRaid(raid);
+  into.append(outcome);
 }
 
 /** The first tap of a two-tap move: it must be a territory that can act. */

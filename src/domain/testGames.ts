@@ -8,6 +8,7 @@ export interface BoardOverrides {
   readonly phase?: Phase;
   readonly armies?: Readonly<Record<string, number>>;
   readonly lines?: Readonly<Record<string, number | { turns: number; revealed: boolean }>>;
+  readonly bombers?: Readonly<Record<string, number>>;
   readonly reinforcementsLeft?: number;
   readonly hasFortified?: boolean;
 }
@@ -31,6 +32,8 @@ export function stateWhere(
     holdings.set(territory.id, {
       owner,
       armies: overrides.armies?.[territory.id] ?? 1,
+      bombers: overrides.bombers?.[territory.id] ?? 0,
+      bombersFlown: false,
       line:
         declared === undefined
           ? null

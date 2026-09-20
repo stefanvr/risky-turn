@@ -30,6 +30,7 @@ export function createMapView(map: GameMap): MapView {
   const regions = new Map<TerritoryId, SVGElement>();
   const counts = new Map<TerritoryId, SVGElement>();
   const lines = new Map<TerritoryId, SVGElement>();
+  const squadrons = new Map<TerritoryId, { group: SVGElement; count: SVGElement }>();
   const works = document.createElementNS(SVG_NS, "g");
   works.setAttribute("class", "map__lines");
   works.setAttribute("aria-hidden", "true");
@@ -49,8 +50,14 @@ export function createMapView(map: GameMap): MapView {
     const { group, count } = drawLabel(territory);
     counts.set(territory.id, count);
     labels.append(group);
+
+    const squadron = drawSquadron(territory);
+    squadrons.set(territory.id, squadron);
+    labels.append(squadron.group);
   }
-  element.append(works, labels);
+  // Painted after the regions: SVG has no z-index, so anything drawn before
+  // them is simply covered by opaque ground.
+  element.append(drawSeaLinks(map), works, labels);
 
   return {
     element,
@@ -64,11 +71,20 @@ export function createMapView(map: GameMap): MapView {
 
         line.setAttribute("data-line", shown.line);
 
+        const squadron = squadrons.get(shown.id);
+        if (squadron) {
+          squadron.group.setAttribute("data-bombers-for", shown.id);
+          squadron.group.setAttribute("data-bombers", String(shown.bombers));
+          squadron.group.style.display = shown.bombers > 0 ? "" : "none";
+          squadron.count.textContent = String(shown.bombers);
+        }
+
         region.setAttribute("data-player", String(shown.playerNumber));
         region.setAttribute("aria-pressed", String(shown.selected));
         region.setAttribute(
           "aria-label",
-          `${shown.name}, held by ${shown.owner}, ${armiesInWords(shown.armies)}${lineInWords(shown.line)}`,
+          `${shown.name}, held by ${shown.owner}, ${armiesInWords(shown.armies)}` +
+            `${bombersInWords(shown.bombers)}${lineInWords(shown.line)}`,
         );
         count.textContent = String(shown.armies);
       }
@@ -147,6 +163,69 @@ function inset(shape: readonly Point[], fraction: number): Point[] {
     x: point.x + (centre.x - point.x) * fraction,
     y: point.y + (centre.y - point.y) * fraction,
   }));
+}
+
+/** A wing and a count, shown only where bombers actually stand. */
+function drawSquadron(territory: Territory): { group: SVGElement; count: SVGElement } {
+  const centre = centreOf(territory.shape);
+  const group = document.createElementNS(SVG_NS, "g");
+  group.setAttribute("class", "territory__bombers");
+  group.setAttribute("data-bombers-for", territory.id);
+  group.setAttribute("data-bombers", "0");
+  group.style.display = "none";
+
+  const wing = document.createElementNS(SVG_NS, "path");
+  wing.setAttribute("class", "bomber__wing");
+  const x = centre.x - 5;
+  const y = centre.y + 13;
+  wing.setAttribute("d", `M ${x} ${y} l 7 -3 l -7 -3 l 1.6 3 z`);
+
+  const count = document.createElementNS(SVG_NS, "text");
+  count.setAttribute("class", "territory__bomberCount");
+  count.setAttribute("x", String(centre.x + 5));
+  count.setAttribute("y", String(centre.y + 13));
+  count.setAttribute("text-anchor", "middle");
+  count.setAttribute("dominant-baseline", "central");
+  count.textContent = "0";
+
+  group.append(wing, count);
+  return { group, count };
+}
+
+/** Water, drawn as the dashed run a bomber can cross and an army cannot. */
+function drawSeaLinks(map: GameMap): SVGElement {
+  const water = document.createElementNS(SVG_NS, "g");
+  water.setAttribute("class", "map__sea");
+  water.setAttribute("aria-hidden", "true");
+
+  const drawn = new Set<string>();
+  for (const territory of map.territories) {
+    for (const across of territory.seaLinks ?? []) {
+      const pair = [territory.id, across].sort().join("~");
+      if (drawn.has(pair)) continue;
+      drawn.add(pair);
+
+      const other = map.territories.find((candidate) => candidate.id === across);
+      if (!other) continue;
+      const here = centreOf(territory.shape);
+      const there = centreOf(other.shape);
+
+      const link = document.createElementNS(SVG_NS, "line");
+      link.setAttribute("class", "sea-link");
+      link.setAttribute("data-sea-link", pair);
+      link.setAttribute("x1", String(here.x));
+      link.setAttribute("y1", String(here.y));
+      link.setAttribute("x2", String(there.x));
+      link.setAttribute("y2", String(there.y));
+      water.append(link);
+    }
+  }
+  return water;
+}
+
+function bombersInWords(bombers: number): string {
+  if (bombers === 0) return "";
+  return bombers === 1 ? ", 1 bomber" : `, ${bombers} bombers`;
 }
 
 function lineInWords(line: TerritoryPresentation["line"]): string {

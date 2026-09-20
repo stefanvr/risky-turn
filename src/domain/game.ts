@@ -22,7 +22,19 @@ export interface Holding {
   readonly owner: PlayerId;
   readonly armies: number;
   readonly line: DefensiveLine | null;
+  /** Bombers standing here. Never armies: they hold nothing and defend nothing. */
+  readonly bombers: number;
+  /** Whether this territory's bombers have flown this turn. */
+  readonly bombersFlown: boolean;
 }
+
+/*
+ * PROVISIONAL: a bomber costs three reinforcements, and a bombing die kills on
+ * a five or a six. Together these set how fast reach can be bought and how
+ * much it does; both want a full game played before they are settled.
+ */
+export const BOMBER_COST = 3;
+export const BOMBS_KILL_FROM = 5;
 
 /** Armies a territory must keep standing for a line to be declared or to hold. */
 export const LINE_MINIMUM_GARRISON = 5;

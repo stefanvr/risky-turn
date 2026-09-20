@@ -142,6 +142,28 @@ body {
   cursor: pointer;
 }
 
+.board__build {
+  min-height: 2.6rem;
+  border: 0;
+  border-radius: 0.6rem;
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--land);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.board__build[aria-pressed="true"] {
+  background: var(--land);
+}
+
+.board__build:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .board__end {
   /* A thumb needs a target this size; do not shrink it to fit a layout. */
   min-height: 3rem;
@@ -200,6 +222,31 @@ body {
 
 /* Works dug inside a territory: dashed while they are being prepared, solid
    once they hold. */
+/* Water: crossable by bombers, impassable to armies. */
+.sea-link {
+  stroke: var(--ink-dim);
+  stroke-width: 1.2;
+  stroke-dasharray: 2 3;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.bomber__wing {
+  fill: var(--ink);
+}
+
+.territory__bomberCount {
+  fill: var(--ink);
+  font-family: var(--font);
+  font-size: 6px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.territory__bombers {
+  pointer-events: none;
+}
+
 .territory__line {
   fill: none;
   stroke: var(--ink);

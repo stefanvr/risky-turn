@@ -67,9 +67,9 @@ Deferred on 2026-09-20 for the same reason.
 
 ## Rules of Risky Turn's own
 
-Two mechanics that are not Risk's. Both are decided; neither is implemented
-yet. They are written here in full because they are the first rules this game
-owns outright, and because they interlock: a defensive line makes a stack
+Two mechanics that are not Risk's, both implemented. They are written here in
+full because they are the first rules this game owns outright, and because they
+interlock: a defensive line makes a stack
 expensive to take by ground, and bombers are how a stack is reached without
 taking ground. Bomb a line's garrison below its threshold and the line
 collapses.
@@ -123,17 +123,21 @@ visible to opponents while it is being built.
 
 ### What these cost the model
 
-Lines are implemented. `Holding` carries a line alongside its owner and army
-count, and the line is a countdown of the holder's own remaining turns rather
-than a flag, which turned out to need no global notion of rounds: the count
-lives on the territory and is stepped when its holder's turn ends. The collapse
-rule lives in `withHolding`, so every path that can thin a garrison enforces it
-without having to remember to.
+`Holding` carries a line, a bomber count and whether those bombers have flown,
+alongside its owner and armies. A line is a countdown of the holder's own
+remaining turns rather than a flag, which needed no global notion of rounds:
+the count lives on the territory and is stepped when its holder's turn ends.
+The collapse rule lives in `withHolding`, so every path that can thin a
+garrison enforces it without having to remember to.
 
-Bombers still cost the map a concept. Sea links are a second kind of edge —
-reachable by bombers, ignored by ground attacks and fortifies — and the proving
-map has no water at all, so one will have to be added there before bombers can
-be exercised on it.
+The map gained sea links: a second kind of edge, symmetric like a border,
+refused where a land border already runs, and read only by `withinBomberReach`.
+A sea link is a destination rather than a road — crossing water does not let a
+bomber continue overland on the far side — because one link would otherwise
+open up half a map.
+
+Reach is deliberately not a general pathfinder. It is two steps of breadth over
+borders, plus a direct sea link, and nothing else.
 
 Open numbers, all PROVISIONAL until a full game has been played: what a bomber
 costs in reinforcements, whether reach is two borders, whether 5 and 6 are the

@@ -18,6 +18,7 @@ function board(
     owner: "red",
     playerNumber: 1,
     armies: 1,
+    bombers: 0,
     selected: false,
     line: "none" as const,
     ...overrides[territory.id],
@@ -82,11 +83,36 @@ describe("map view", () => {
     expect(lineOf("charlie")).toBe("none");
   });
 
+  it("shows a squadron only where bombers stand", () => {
+    const view = createMapView(provingMap);
+    view.show(board({ delta: { bombers: 2 } }));
+    const at = (id: string) => view.element.querySelector(`[data-bombers-for="${id}"]`) as SVGElement;
+    expect(at("delta").getAttribute("data-bombers")).toBe("2");
+    expect(at("delta").style.display).toBe("");
+    expect(at("alfa").style.display).toBe("none");
+  });
+
+  it("draws the water a bomber can cross and an army cannot", () => {
+    const view = createMapView(provingMap);
+    expect(view.element.querySelectorAll("[data-sea-link]")).toHaveLength(1);
+    expect(view.element.querySelector("[data-sea-link]")?.getAttribute("data-sea-link")).toBe("alfa~echo");
+  });
+
+  it("paints the water over the ground, not under it", () => {
+    // SVG has no z-index: a sea link drawn before the regions is covered by
+    // them and the player sees nothing at all.
+    const view = createMapView(provingMap);
+    const children = [...view.element.children];
+    const lastRegion = children.findLastIndex((child) => child.hasAttribute("data-territory"));
+    const water = children.findIndex((child) => child.classList.contains("map__sea"));
+    expect(water).toBeGreaterThan(lastRegion);
+  });
+
   it("describes a region for a screen reader as its holder and strength", () => {
     const view = createMapView(provingMap);
-    view.show(board({ delta: { owner: "blue", armies: 1 } }));
+    view.show(board({ delta: { owner: "blue", armies: 1, bombers: 2 } }));
     const delta = view.element.querySelector('[data-territory="delta"]');
-    expect(delta?.getAttribute("aria-label")).toBe("Delta, held by blue, 1 army");
+    expect(delta?.getAttribute("aria-label")).toBe("Delta, held by blue, 1 army, 2 bombers");
   });
 });
 
