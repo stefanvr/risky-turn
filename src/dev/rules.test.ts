@@ -13,9 +13,24 @@ describe("what a browser may reach in the database", () => {
     await expect(readUnrelatedRoom()).rejects.toThrow(/permission|denied/i);
   });
 
-  it("lets the two players of a room exchange what they need", async () => {
+  it("lets the two players of a room say things to each other", async () => {
     const { exchangeInOwnRoom } = await import("./rulesHarness");
     await expect(exchangeInOwnRoom()).resolves.toBe(true);
+  });
+
+  it("does not let one player speak as the other", async () => {
+    const { guestSpeaksAsTheHost } = await import("./rulesHarness");
+    await expect(guestSpeaksAsTheHost()).rejects.toThrow(/permission|denied/i);
+  });
+
+  it("does not let a player amend what it already said", async () => {
+    const { hostAmendsWhatItSaid } = await import("./rulesHarness");
+    await expect(hostAmendsWhatItSaid()).rejects.toThrow(/permission|denied/i);
+  });
+
+  it("lets a guest give up its own place, so the host learns they left", async () => {
+    const { guestLeavesItsOwnPlace } = await import("./rulesHarness");
+    await expect(guestLeavesItsOwnPlace()).resolves.toBe(true);
   });
 
   it("lets the host clear the room it made", async () => {

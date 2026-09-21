@@ -9,8 +9,8 @@ const board = { alfa: "Red", bravo: "Blue", charlie: "Blue", delta: "Red", echo:
 
 /**
  * The host owns the game; a seat owns a screen. No network is involved here:
- * the loopback transport stands in for a DataChannel so that authority and
- * secrecy can be proved before either is carried over one.
+ * the loopback transport stands in for the relay so that authority and
+ * secrecy can be proved before either is carried across one.
  */
 describe("two seats on one match", () => {
   it("shows a watching seat what the acting seat just did", () => {

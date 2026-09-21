@@ -11,25 +11,38 @@ no account is made, no game is stored, and nothing of a game survives a reload.
 This is what makes "nothing to install, no account to make" true, and it is the
 constraint every other choice here answers to.
 
-A match between players on their own devices needs two things a page cannot
-supply by itself: somewhere to agree a room, and somewhere to exchange the
-details of a connection. Firebase supplies both and nothing else — identity,
-rooms, join codes and WebRTC signalling. Gameplay runs between browsers over a
-WebRTC DataChannel, opened with the help of a public STUN server. There is no
-TURN relay: a connection that cannot be made directly is not made at all, and
-the screen says so. Firebase is never in the gameplay path, and no backend
-credential or service account is present in browser code.
+A match between players on their own devices needs something a page cannot
+supply by itself: somewhere both browsers can reach. Firebase is that place,
+and it carries the whole match — identity, rooms, join codes and every message
+of play. There is no peer connection and no TURN relay to pay for: two browsers
+that can reach the database can play, which is the case a direct connection
+between two mobile networks most often is not. No backend credential or service
+account is present in browser code; anonymous sign-in and the security rules
+are the whole of the boundary.
 
-A room is a place to be introduced and nothing else. It holds the two players,
-the offer, the answer and the candidates, and is deleted as soon as the channel
-is open — and if it never opens, the database is told at the moment the room is
-made to delete it when the host's connection drops, because there is no server
-to sweep up afterwards. Clearing a room is the host's alone, and it is the only
-thing the rules let anyone do at that path. `database.rules.json` is the
-boundary between one match and another, and is the only thing standing between
-a guessed six-digit code and somebody else's game. The rules are published to
-the live project by hand; the Pages workflow carries the site and nothing else,
-so a rule changed here is not a rule in force until it is published.
+What this costs is a round trip per action, which a turn-based game does not
+feel, and gameplay that is legible to whoever runs the project. What it buys is
+one transport: no fallback path, no second implementation, and no class of
+player who cannot play.
+
+A room is the match. It holds the two players and two lists of messages, one
+per side: each side appends to its own and reads the other's, and a message
+cannot be amended or withdrawn once written. The room lives as long as the
+match does. Clearing it is the host's alone — which is what makes "a match
+depends on the player who started it" true of the data as well as the rules —
+and the database is told at the moment the room is made to clear it when the
+host's connection drops, because there is no server to sweep up afterwards. A
+guest who leaves takes only their own place, which is how the host learns they
+are gone.
+
+Each side writes only under its own name and reads only the other's list, so
+the redaction in `src/domain/view.ts` is what a player receives, exactly as it
+was over a direct connection: the host sends one player's view to that player's
+list and nowhere else. `database.rules.json` is the boundary between one match
+and another, and is the only thing standing between a guessed six-digit code
+and somebody else's game. The rules are published to the live project by hand;
+the Pages workflow carries the site and nothing else, so a rule changed here is
+not a rule in force until it is published.
 
 Published to GitHub Pages at `https://stefanvr.github.io/risky-turn/` on every
 push to `main`. The asset base and the workflow are the authority for the URL —

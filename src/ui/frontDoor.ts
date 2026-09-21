@@ -3,8 +3,8 @@ import { mountSeat } from "./seat";
 import { joinSeat, openMatch } from "../match/match";
 import { connect } from "../net/firebase";
 import { enterRoom, openRoom } from "../net/rooms";
-import { link } from "../net/peer";
-import type { Link, LinkState } from "../net/peer";
+import { relay } from "../net/relay";
+import type { Link, LinkState } from "../net/relay";
 import type { Dice } from "../domain/dice";
 import type { GameState, PlayerId } from "../domain/game";
 import type { Random } from "../domain/random";
@@ -22,10 +22,10 @@ export interface OnlinePlay {
 
 export const overTheInternet: OnlinePlay = {
   async host(code, map) {
-    return link(await openRoom(await connect(`host-${code}`), code), map);
+    return relay(await openRoom(await connect(`host-${code}`), code), map);
   },
   async join(code, map) {
-    return link(await enterRoom(await connect(`guest-${code}`), code), map);
+    return relay(await enterRoom(await connect(`guest-${code}`), code), map);
   },
 };
 

@@ -2,7 +2,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createServer } from "vite";
 import { chromium } from "playwright";
-import type { Browser, BrowserContext, Page, Request } from "playwright";
+import type { Browser, BrowserContext, Page } from "playwright";
 import type { ViteDevServer } from "vite";
 
 /**
@@ -10,8 +10,9 @@ import type { ViteDevServer } from "vite";
  *
  * Each page gets its own browser context, so nothing same-origin can carry the
  * game between them: no BroadcastChannel, no shared storage. What is left is
- * the room in the database and the peer connection it introduces, which is the
- * whole claim of this milestone.
+ * the backend, which carries the whole match — so the check watches the
+ * database socket while a move is made, and watches for a peer connection
+ * that must never be built.
  */
 describe("two browsers on one game", () => {
   let server: ViteDevServer;
@@ -19,14 +20,32 @@ describe("two browsers on one game", () => {
   let url: string;
   let hosting: { context: BrowserContext; page: Page };
   let joining: { context: BrowserContext; page: Page };
-  const databaseCalls: Request[] = [];
-  let watchingCalls = false;
+  const databaseFrames: string[] = [];
+  let watchingFrames = false;
 
   const openOne = async (): Promise<{ context: BrowserContext; page: Page }> => {
     const context = await browser.newContext();
+    // Counted rather than refused, so a failure says how many were built.
+    await context.addInitScript(() => {
+      const made = { count: 0 };
+      (window as unknown as { peersBuilt: { count: number } }).peersBuilt = made;
+      const original = window.RTCPeerConnection;
+      if (original === undefined) return;
+      window.RTCPeerConnection = new Proxy(original, {
+        construct(target, args: unknown[]) {
+          made.count += 1;
+          return Reflect.construct(target, args) as RTCPeerConnection;
+        },
+      });
+    });
     const page = await context.newPage();
-    page.on("request", (request) => {
-      if (watchingCalls && /firebasedatabase|:9000\//.test(request.url())) databaseCalls.push(request);
+    // Realtime Database talks over a WebSocket, so the traffic is frames on a
+    // socket, not requests. Counting requests would prove nothing either way.
+    page.on("websocket", (socket) => {
+      if (!/firebasedatabase|:9000\//.test(socket.url())) return;
+      socket.on("framesent", (frame) => {
+        if (watchingFrames) databaseFrames.push(String(frame.payload));
+      });
     });
     await page.goto(url);
     // Vite discovers and pre-bundles the Firebase modules on first load, which
@@ -43,16 +62,7 @@ describe("two browsers on one game", () => {
     server = await createServer({ server: { port: 0 } });
     await server.listen();
     url = server.resolvedUrls!.local[0]!;
-    // Chromium hides a machine's local addresses behind mDNS hostnames, and a
-    // CI runner has nothing to resolve them with, so the two contexts gather
-    // candidates they cannot use and the channel never opens. Off, the host
-    // candidates are plain addresses and the two browsers find each other on
-    // the machine they are both running on. This is how the test reaches a
-    // connection, not how the game does: a player's browser keeps mDNS and
-    // reaches the other side through the STUN server in src/net/peer.ts.
-    browser = await chromium.launch({
-      args: ["--disable-features=WebRtcHideLocalIpsWithMdns"],
-    });
+    browser = await chromium.launch();
     hosting = await openOne();
     joining = await openOne();
   }, 120_000);
@@ -62,7 +72,7 @@ describe("two browsers on one game", () => {
     await server?.close();
   });
 
-  it("introduces two browsers by a code and opens a channel between them", async () => {
+  it("introduces two browsers by a code and seats them in one match", async () => {
     await hosting.page.click('[data-role="play-online"]');
     const code = ((await hosting.page.textContent('[data-role="join-code"]')) ?? "").replace(
       /\s/g,
@@ -85,9 +95,9 @@ describe("two browsers on one game", () => {
     }
   }, 120_000);
 
-  it("carries the game on the channel, not through the database", async () => {
-    watchingCalls = true;
-    databaseCalls.length = 0;
+  it("carries the game through the database, which is the transport", async () => {
+    watchingFrames = true;
+    databaseFrames.length = 0;
 
     const inHand = Number(/(\d+) to place/.exec((await turn(joining.page)) ?? "")?.[1]);
     expect(inHand).toBeGreaterThan(0);
@@ -98,8 +108,18 @@ describe("two browsers on one game", () => {
       .poll(() => turn(joining.page), { timeout: 30_000 })
       .toContain(`${inHand - 1} to place`);
 
-    // Firebase introduced the two browsers and then got out of the way.
-    expect(databaseCalls.map((call) => call.url())).toEqual([]);
+    // The move crossed, and it crossed here: the backend is the carrier, not
+    // an introduction service that steps aside.
+    expect(databaseFrames.length).toBeGreaterThan(0);
+  }, 120_000);
+
+  it("builds no peer connection at all", async () => {
+    for (const page of [hosting.page, joining.page]) {
+      const built = await page.evaluate(
+        () => (window as unknown as { peersBuilt: { count: number } }).peersBuilt.count,
+      );
+      expect(built).toBe(0);
+    }
   }, 120_000);
 
   it("refuses a code no room is waiting on", async () => {

@@ -4,8 +4,8 @@
       "$code": {
         // The host may take its own room away and do nothing else at this
         // level: a write that leaves anything behind is refused. This is what
-        // lets a finished room be cleared, and what lets onDisconnect clear a
-        // room whose host closed the tab without ever connecting.
+        // ends a match, and what lets onDisconnect clear a room whose host
+        // closed the tab.
         ".write": "auth != null && data.child('host/uid').val() === auth.uid && !newData.exists()",
 
         ".read": "auth != null && (data.child('host/uid').val() === auth.uid || data.child('guest/uid').val() === auth.uid)",
@@ -14,21 +14,22 @@
           ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid"
         },
 
+        // A guest may take the free place, and may later give up its own. It
+        // may not take anyone else's, and may not put someone else in it.
         "guest": {
-          ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid && root.child('rooms').child($code).child('host').exists()"
+          ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid && root.child('rooms').child($code).child('host').exists()) || (data.child('uid').val() === auth.uid && !newData.exists()))"
         },
 
-        "offer": {
-          ".write": "auth != null && root.child('rooms').child($code).child('host/uid').val() === auth.uid"
-        },
-
-        "answer": {
-          ".write": "auth != null && root.child('rooms').child($code).child('guest/uid').val() === auth.uid"
-        },
-
-        "ice": {
+        // The match itself. Each side appends to its own list and reads the
+        // other's, which the room-level .read already allows. A message is
+        // written once: it cannot be amended or withdrawn, by its sender or
+        // by anyone, so what a player acts on is what was said.
+        "wire": {
           "$side": {
-            ".write": "auth != null && root.child('rooms').child($code).child($side).child('uid').val() === auth.uid"
+            "$message": {
+              ".write": "auth != null && !data.exists() && newData.exists() && root.child('rooms').child($code).child($side).child('uid').val() === auth.uid",
+              ".validate": "newData.isString()"
+            }
           }
         },
 

@@ -6,7 +6,7 @@ import type { PlayerId } from "../domain/game";
  *
  * It exists so that authority and secrecy can be checked without a network —
  * if a seat is handed something its player may not know, the loopback shows it
- * exactly as a DataChannel would.
+ * exactly as the relay would.
  */
 export function loopback(): Transport {
   let handler: ((player: PlayerId, action: Action) => void) | undefined;

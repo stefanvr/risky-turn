@@ -50,8 +50,8 @@ export interface Update {
 
 /**
  * Carries actions to the host and updates back. A loopback implementation runs
- * a match in one process; a DataChannel implementation runs one between
- * browsers. Nothing above this interface knows which it has.
+ * a match in one process; the relay runs one between browsers, through the
+ * backend. Nothing above this interface knows which it has.
  */
 export interface Transport {
   submit(player: PlayerId, action: Action): void;

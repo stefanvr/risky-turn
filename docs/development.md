@@ -182,9 +182,9 @@ pnpm exec playwright install chromium
 
 ## Playing across two browsers
 
-Online play needs the Firebase project: a room to be introduced in, and a
-peer connection to play over. Against the emulators, which need no account and
-reach nothing real:
+Online play needs the Firebase project: a room to meet in, which is also what
+carries the match. Against the emulators, which need no account and reach
+nothing real:
 
 ```sh
 pnpm dev:online
@@ -194,7 +194,8 @@ Open the address it prints in two different browsers — or one browser and one
 private window, which is enough to keep them apart. Tap *Play online* in the
 first, then *Play online → Join a game instead* in the second and type the six
 digits. Both land on the board with a line above it saying the connection is
-up.
+up. Every tap after that is a write to the emulated database, which is the
+quickest way to watch a match being carried: the emulator's log shows it.
 
 Against the live project, `pnpm dev` does the same thing without the emulators.
 That needs `databaseURL` in `src/net/firebase.ts` to be the real instance's
@@ -202,10 +203,15 @@ URL, which carries its region.
 
 ### What the room holds, and for how long
 
-A room holds who the two players are, the offer and answer that open the peer
-connection, and the candidates that route it. It is deleted as soon as the
-channel is open. No move ever passes through it, which is why the check asserts
-that the database is asked for nothing once play begins.
+A room holds who the two players are and two lists of messages, one per side.
+Each side appends to its own list and reads the other's, so an action goes to
+the host's list and an update comes back on the player's own. Nothing is
+amended or withdrawn once written — the rules refuse it — so a list is the
+match as it happened, in order.
+
+The room lives as long as the match. It goes when the host clears it, or when
+the host's connection drops and the database clears it for them. A guest who
+leaves removes only their own place, which is how the host is told.
 
 `database.rules.json` is the boundary between one match and another: a
 six-digit code is short enough to guess, so what a guess reaches has to be
@@ -228,7 +234,10 @@ last, which is how a room that could never be cleared survived a passing check.
 `pnpm test` runs the whole suite inside `firebase emulators:exec`, so the
 emulators are up for the tests that need them. `src/dev/online.test.ts` drives
 two **separate browser contexts**, so no same-origin shortcut can carry the
-game between them: what is left is the room and the peer connection.
+game between them: what is left is the room. It watches the frames on the
+database's WebSocket while a move is made, because that is where the evidence
+is — and it counts every `RTCPeerConnection` either page builds, which must be
+none.
 
 Both need the Chromium download and a JDK:
 

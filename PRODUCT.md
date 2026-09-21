@@ -42,6 +42,13 @@ they are declared. A round needs only a phone and a few minutes of attention.
 - A match depends on the player who started it. If they leave, it ends for
   everyone: there is no handing a match on to somebody else and no waiting for
   its owner to come back.
+- A match between players on their own devices is carried by the game's own
+  service, not by a connection the two devices make to each other. A match
+  therefore works wherever the game itself can be reached, and a player is
+  never told that their network is the reason they cannot play. What this
+  costs is that everything a match says passes through that service, where
+  whoever runs it can read it; what a player may not know is still never sent
+  to them.
 - The screen states at all times whose turn it is, in that player's own colour,
   and what the turn still owes. What just happened is reported separately and
   never displaces it: on a shared phone, the standing question and the last
@@ -101,9 +108,4 @@ they are declared. A round needs only a phone and a few minutes of attention.
   before it is a technical one — thirty territories split eight ways is three
   or four each, and there are six player colours — and none of that can be
   judged before a networked match has been played at all.
-- 2026-09-21 — Relaying a connection that cannot be made directly. Two players
-  whose networks will not let them reach each other cannot play online, and are
-  told so rather than quietly routed through a middleman. A relay has to be
-  paid for and kept running, and how often this actually bites is not known:
-  start with direct connections and revisit when someone is unable to play.
 

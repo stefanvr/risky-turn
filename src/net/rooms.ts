@@ -13,19 +13,23 @@ export class NoSuchRoomError extends Error {
 }
 
 /**
- * A room is a place to be introduced, and nothing else. It holds who the two
- * players are for this match, the offer and answer that open a peer
- * connection, and the candidates that route it — and it is emptied as soon as
- * the connection is up. No move ever passes through it.
+ * A room is where a match is met and how it is carried.
+ *
+ * It holds who the two players are and two lists of messages, one per side:
+ * each side appends to its own and reads the other's. A message is never
+ * amended or taken back — the rules refuse both — so what a side reads is
+ * what the other side sent, in the order it sent it.
  */
 export interface Room {
   readonly code: string;
   readonly side: Side;
-  put(what: "offer" | "answer", value: unknown): Promise<void>;
-  watch(what: "offer" | "answer", found: (value: unknown) => void): void;
-  addCandidate(candidate: unknown): Promise<void>;
-  watchCandidates(found: (candidate: unknown) => void): void;
-  /** Emptied once the players can talk without it. */
+  /** Appends to this side's list. The other side reads it. */
+  send(message: string): Promise<void>;
+  /** Every message the other side has sent, from the first, then as they come. */
+  receive(found: (message: string) => void): void;
+  /** Called once the other side, having been there, is gone. */
+  whenTheOtherGoes(gone: () => void): void;
+  /** Takes the room away, with everything either side put in it. */
   close(): Promise<void>;
 }
 
@@ -36,29 +40,33 @@ function roomAt(database: Database, code: string, side: Side): Room {
   return {
     code,
     side,
-    async put(what, value) {
-      await set(at(what), value);
+    async send(message) {
+      await set(push(at(`wire/${side}`)), message);
     },
-    watch(what, found) {
-      onValue(at(what), (shot) => {
-        const value = shot.val();
+    receive(found) {
+      onChildAdded(at(`wire/${theirs}`), (shot) => {
+        const value = shot.val() as string | null;
         if (value !== null) found(value);
       });
     },
-    async addCandidate(candidate) {
-      await set(push(at(`ice/${side}`)), candidate);
-    },
-    watchCandidates(found) {
-      onChildAdded(at(`ice/${theirs}`), (shot) => {
-        const value = shot.val();
-        if (value !== null) found(value);
+    /*
+     * The other player is present exactly while their side of the room is.
+     * A host who closes the tab takes the whole room with them, and a guest
+     * who closes theirs takes their own place in it; either way this is where
+     * the remaining player learns the match is over.
+     */
+    whenTheOtherGoes(gone) {
+      let seen = false;
+      onValue(at(theirs), (shot) => {
+        if (shot.exists()) seen = true;
+        else if (seen) gone();
       });
     },
     /*
      * Only the host can clear a room, and the rules allow it nothing else at
      * that path. The failure is not swallowed: a room that cannot be cleared
-     * is one that stays on the database holding both players' identifiers for
-     * good, which is worth failing loudly over.
+     * is one that stays on the database holding both players' identifiers and
+     * everything they said, which is worth failing loudly over.
      */
     async close() {
       if (side !== "host") return;
@@ -76,9 +84,9 @@ export async function openRoom(connected: Connected, code: string): Promise<Room
     throw new RoomTakenError(`a game is already waiting on ${code}`);
   }
   /*
-   * A host who closes the tab before anyone joins would otherwise leave the
-   * room standing for ever. There is no server to sweep up, so the database is
-   * told now what to do when this browser goes away.
+   * A host who goes away would otherwise leave the room standing for ever.
+   * There is no server to sweep up, so the database is told now what to do
+   * when this browser goes: the match depends on its host, and ends with it.
    */
   await onDisconnect(ref(connected.database, `rooms/${code}`)).remove();
   return roomAt(connected.database, code, "host");
@@ -101,5 +109,7 @@ export async function enterRoom(connected: Connected, code: string): Promise<Roo
   const room = roomAt(connected.database, code, "guest");
   const waiting = await get(ref(connected.database, `rooms/${code}/host`));
   if (!waiting.exists()) throw new NoSuchRoomError(`no game is waiting on ${code}`);
+  // A guest who leaves takes their own place away, so the host is told.
+  await onDisconnect(guest).remove();
   return room;
 }
