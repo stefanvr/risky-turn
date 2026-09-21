@@ -43,7 +43,16 @@ describe("two browsers on one game", () => {
     server = await createServer({ server: { port: 0 } });
     await server.listen();
     url = server.resolvedUrls!.local[0]!;
-    browser = await chromium.launch();
+    // Chromium hides a machine's local addresses behind mDNS hostnames, and a
+    // CI runner has nothing to resolve them with, so the two contexts gather
+    // candidates they cannot use and the channel never opens. Off, the host
+    // candidates are plain addresses and the two browsers find each other on
+    // the machine they are both running on. This is how the test reaches a
+    // connection, not how the game does: a player's browser keeps mDNS and
+    // reaches the other side through the STUN server in src/net/peer.ts.
+    browser = await chromium.launch({
+      args: ["--disable-features=WebRtcHideLocalIpsWithMdns"],
+    });
     hosting = await openOne();
     joining = await openOne();
   }, 120_000);
