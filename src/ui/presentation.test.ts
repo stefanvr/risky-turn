@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { legendOf, presentGame } from "./presentation";
 import { stateWhere } from "../domain/testGames";
+import { viewFor } from "../domain/view";
 import { worldMap } from "../maps/world";
 import { newGame } from "../domain/setup";
 import { seededRandom } from "../domain/random";
@@ -51,7 +52,8 @@ describe("a squadron that has already flown", () => {
     stateWhere(board, { phase: "attack", armies: { alfa: 3 }, bombers: { alfa: 2 }, ...overrides });
 
   const squadronOn = (state: GameState, id: string) =>
-    presentGame(state, null).territories.find((t) => t.id === id)?.squadron;
+    presentGame(viewFor(state, state.currentPlayer), null).territories.find((t) => t.id === id)
+      ?.squadron;
 
   it("reads ready while it can still fly", () => {
     expect(squadronOn(withSquadron(), "alfa")).toBe("ready");
@@ -108,7 +110,8 @@ describe("what the board shows", () => {
       lines: { bravo: 0 },
       currentPlayer: "red",
     });
-    expect(presentGame(state, null).territories.find((t) => t.id === "bravo")?.line).toBe("none");
+    const seen = presentGame(viewFor(state, "red"), null).territories;
+    expect(seen.find((t) => t.id === "bravo")?.line).toBe("none");
   });
 
   it("shows an opponent's line once an attack has found it", () => {
@@ -117,7 +120,8 @@ describe("what the board shows", () => {
       lines: { bravo: { turns: 0, revealed: true } },
       currentPlayer: "red",
     });
-    expect(presentGame(state, null).territories.find((t) => t.id === "bravo")?.line).toBe("holding");
+    const seen = presentGame(viewFor(state, "red"), null).territories;
+    expect(seen.find((t) => t.id === "bravo")?.line).toBe("holding");
   });
 
   it("poises a selected cell on its armies while attacking", () => {

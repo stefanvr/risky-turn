@@ -18,4 +18,21 @@ const { state, seed } = chooseStartingState(window.location.search, {
   now: () => Date.now(),
 });
 
-mountGame(host, state, diceFrom(seededRandom(seed + 1)));
+const dice = diceFrom(seededRandom(seed + 1));
+
+/*
+ * `?seat=` opens the page as one player's own screen rather than as the shared
+ * device, which is how a seat watching someone else's turn can be looked at
+ * before there is a network to reach one over. Development only: the constant
+ * folds away in a production build and takes the branch with it.
+ */
+const seat = import.meta.env.DEV ? new URLSearchParams(window.location.search).get("seat") : null;
+
+if (seat !== null) {
+  const { openMatch } = await import("./match/match");
+  const { loopback } = await import("./match/loopback");
+  const { mountSeat } = await import("./ui/seat");
+  mountSeat(host, openMatch({ state, dice, transport: loopback() }).seat(seat));
+} else {
+  mountGame(host, state, dice);
+}

@@ -188,3 +188,42 @@ function apply(state: GameState, action: Action, dice: Dice): Applied {
     }
   }
 }
+
+/**
+ * One screen passed from hand to hand: it always speaks as the player whose
+ * turn it is, and is sent that player's view. A shared device needs no other
+ * arrangement, because the person holding it is the person playing.
+ */
+export function sharedSeat(match: Match, players: readonly PlayerId[]): Seat {
+  const seats = new Map(players.map((player) => [player, match.seat(player)]));
+  const listeners: ((update: Update) => void)[] = [];
+
+  const first = players[0];
+  if (first === undefined) throw new Error("a match needs at least one player");
+  let latest: Update = { view: seats.get(first)!.view() };
+  let current: PlayerId = latest.view.currentPlayer;
+
+  for (const [player, seat] of seats) {
+    seat.onUpdate((update) => {
+      // Every seat is told what happened. This screen takes the copy addressed
+      // to whoever is now playing, and ignores the rest.
+      if (update.view.currentPlayer !== player) return;
+      current = player;
+      latest = update;
+      for (const listener of listeners) listener(update);
+    });
+  }
+
+  return {
+    get player() {
+      return current;
+    },
+    view: () => latest.view,
+    outcome: () => latest.outcome,
+    refusal: () => latest.refused,
+    send: (action) => seats.get(current)!.send(action),
+    onUpdate: (listener) => {
+      listeners.push(listener);
+    },
+  };
+}

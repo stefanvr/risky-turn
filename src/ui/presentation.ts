@@ -131,11 +131,11 @@ export function presentGame(
       playerNumber: playerNumberOf(state, holding.owner),
       armies: holding.armies,
       bombers: holding.bombers,
-      squadron: squadronShown(holding, state.currentPlayer),
+      squadron: squadronShown(holding),
       // A cell with its squadron armed is still the cell that is acting, so
       // it keeps the outline even though it is no longer the tap-selection.
       selected: territory.id === selected || territory.id === (armed ?? null),
-      line: lineShown(holding, state.currentPlayer),
+      line: lineShown(holding),
       poised: poisedOn(state, territory.id, selected, armed ?? null),
       reach: reachOf(state, territory.id, selected, armed ?? null),
     };
@@ -331,18 +331,20 @@ function reachOf(
 }
 
 /**
- * Whether a squadron still has its flight. A squadron is spent only on the
- * turn that spent it, and a turn is only ever the current player's: an
- * opponent's plane grounded on a turn this player never watched is not theirs
- * to read off the board.
+ * Whether a squadron still has its flight.
+ *
+ * This draws what it is given and hides nothing of its own. Secrecy is settled
+ * before a state reaches a screen (`src/domain/view.ts`): a state built for one
+ * player already carries only what that player may know, so a flight still
+ * marked here is one the viewer is entitled to see.
  */
-function squadronShown(holding: Holding, viewer: PlayerId): SquadronShown {
-  return holding.bombersFlown && holding.owner === viewer ? "spent" : "ready";
+function squadronShown(holding: Holding): SquadronShown {
+  return holding.bombersFlown ? "spent" : "ready";
 }
 
-function lineShown(holding: Holding, viewer: PlayerId): LineShown {
+/** Likewise: a line still standing in the state is a line this viewer may see. */
+function lineShown(holding: Holding): LineShown {
   if (holding.line === null) return "none";
-  if (holding.owner !== viewer && !holding.line.revealed) return "none";
   return lineIsHolding(holding) ? "holding" : "building";
 }
 
