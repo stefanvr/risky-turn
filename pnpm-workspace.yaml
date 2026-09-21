@@ -1,4 +1,7 @@
+# Build scripts are not run for these. None of them is needed: re2 is an
+# optional native speedup for firebase-tools, and the other two work without
+# their postinstall steps.
 allowBuilds:
-  '@firebase/util': set this to true or false
-  protobufjs: set this to true or false
-  re2: set this to true or false
+  '@firebase/util': false
+  protobufjs: false
+  re2: false
