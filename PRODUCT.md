@@ -89,3 +89,8 @@ they are declared. A round needs only a phone and a few minutes of attention.
   worth an encoder, a decoder and a schema to keep in step, and the obscurity it
   would buy is no defence against anyone determined. Revisit only if a message
   ever becomes frequent.
+- 2026-09-21 — Matches of more than two players. A match is two players until
+  the two-player path works end to end. Eight is a product question of its own
+  before it is a technical one — thirty territories split eight ways is three
+  or four each, and there are six player colours — and none of that can be
+  judged before a networked match has been played at all.
