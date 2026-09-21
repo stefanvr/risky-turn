@@ -212,6 +212,17 @@ six-digit code is short enough to guess, so what a guess reaches has to be
 nothing. `src/dev/rules.test.ts` checks that against the emulator, because
 rules cannot be checked by reading them.
 
+The live project has its own copy of those rules, and nothing publishes it
+automatically — the Pages workflow deploys the site alone. After changing
+`database.rules.json`, publish it:
+
+```sh
+pnpm exec firebase deploy --only database --project risky-turn
+```
+
+Until that runs, the live game is played against the rules that were published
+last, which is how a room that could never be cleared survived a passing check.
+
 ### The checks
 
 `pnpm test` runs the whole suite inside `firebase emulators:exec`, so the

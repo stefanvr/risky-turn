@@ -25,9 +25,11 @@ the offer, the answer and the candidates, and is deleted as soon as the channel
 is open — and if it never opens, the database is told at the moment the room is
 made to delete it when the host's connection drops, because there is no server
 to sweep up afterwards. Clearing a room is the host's alone, and it is the only
-thing the rules let anyone do at that path. `database.rules.json` is the boundary between one match and another,
-and is the only thing standing between a guessed six-digit code and somebody
-else's game.
+thing the rules let anyone do at that path. `database.rules.json` is the
+boundary between one match and another, and is the only thing standing between
+a guessed six-digit code and somebody else's game. The rules are published to
+the live project by hand; the Pages workflow carries the site and nothing else,
+so a rule changed here is not a rule in force until it is published.
 
 Published to GitHub Pages at `https://stefanvr.github.io/risky-turn/` on every
 push to `main`. The asset base and the workflow are the authority for the URL —
