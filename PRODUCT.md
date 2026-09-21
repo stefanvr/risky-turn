@@ -101,3 +101,9 @@ they are declared. A round needs only a phone and a few minutes of attention.
   before it is a technical one — thirty territories split eight ways is three
   or four each, and there are six player colours — and none of that can be
   judged before a networked match has been played at all.
+- 2026-09-21 — Relaying a connection that cannot be made directly. Two players
+  whose networks will not let them reach each other cannot play online, and are
+  told so rather than quietly routed through a middleman. A relay has to be
+  paid for and kept running, and how often this actually bites is not known:
+  start with direct connections and revisit when someone is unable to play.
+

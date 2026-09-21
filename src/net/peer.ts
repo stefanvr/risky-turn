@@ -13,9 +13,13 @@ export interface Link {
 }
 
 /*
- * PROVISIONAL: a public STUN server, and no TURN. STUN is enough for two
- * players who can reach each other directly; a relay is the next thing this
- * needs and it cannot be stood up without an account to pay for it.
+ * A public STUN server, and no relay.
+ *
+ * STUN only tells a browser how it looks from outside, which is enough for two
+ * players whose networks let them reach each other. Where they cannot — a
+ * symmetric NAT, a strict mobile carrier — the connection fails and the game
+ * says so rather than falling back, because a relay has to be paid for and run.
+ * PRODUCT.md records why that is deferred.
  */
 const ICE_SERVERS: RTCConfiguration = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],

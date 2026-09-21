@@ -14,11 +14,17 @@ constraint every other choice here answers to.
 A match between players on their own devices needs two things a page cannot
 supply by itself: somewhere to agree a room, and somewhere to exchange the
 details of a connection. Firebase supplies both and nothing else — identity,
-rooms, join codes and WebRTC signalling. Gameplay runs between browsers over
-WebRTC DataChannels, direct where ICE and STUN can establish it and through a
-TURN relay where they cannot. Firebase is never in the gameplay path, and no
-backend credential, service account or administrative TURN credential is
-present in browser code.
+rooms, join codes and WebRTC signalling. Gameplay runs between browsers over a
+WebRTC DataChannel, opened with the help of a public STUN server. There is no
+TURN relay: a connection that cannot be made directly is not made at all, and
+the screen says so. Firebase is never in the gameplay path, and no backend
+credential or service account is present in browser code.
+
+A room is a place to be introduced and nothing else. It holds the two players,
+the offer, the answer and the candidates, and is deleted as soon as the channel
+is open. `database.rules.json` is the boundary between one match and another,
+and is the only thing standing between a guessed six-digit code and somebody
+else's game.
 
 Published to GitHub Pages at `https://stefanvr.github.io/risky-turn/` on every
 push to `main`. The asset base and the workflow are the authority for the URL —

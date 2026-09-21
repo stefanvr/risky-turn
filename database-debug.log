@@ -1,12 +1,12 @@
-19:26:34.174 [NamespaceSystem-akka.actor.default-dispatcher-5] INFO akka.event.slf4j.Slf4jLogger - Slf4jLogger started
-19:26:34.256 [main] INFO com.firebase.server.forge.App$ - Listening at 127.0.0.1:9000
-19:26:37.173 [NamespaceSystem-akka.actor.default-dispatcher-5] INFO com.firebase.core.namespace.NamespaceActor - risky-turn-default-rtdb successfully activated FBKV (SurveyIdle(0)) wait: 56ms, init: 0ms
-19:26:37.214 [NamespaceSystem-blocking-namespace-operation-dispatcher-7] INFO com.firebase.core.namespace.StateManager - Namespace risky-turn-default-rtdb status Active to Active
-19:26:37.840 [FirebaseWorkerPool-1-3] WARN com.firebase.server.forge.App$ - Received service account token eyJh...SJ9., assuming ownership.
-19:26:38.361 [FirebaseWorkerPool-1-4] WARN com.firebase.server.forge.App$ - Received service account token eyJh...CJ9., assuming ownership.
-19:26:38.439 [FirebaseWorkerPool-1-1] WARN com.firebase.server.forge.App$ - Received service account token eyJh...SJ9., assuming ownership.
-19:26:38.470 [FirebaseWorkerPool-1-2] WARN com.firebase.server.forge.App$ - Received service account token eyJh...CJ9., assuming ownership.
-19:26:40.351 [Thread-0] INFO com.firebase.server.forge.App$ - Attempting graceful shutdown.
-19:26:40.356 [NamespaceSystem-akka.actor.default-dispatcher-10] INFO com.firebase.core.namespace.Terminator$Terminator - 1 actors left to terminate: risky-turn-default-rtdb
-19:26:40.357 [NamespaceSystem-akka.actor.default-dispatcher-9] INFO com.firebase.core.namespace.NamespaceActor - stopped namespace actor for risky-turn-default-rtdb
-19:26:40.359 [Thread-0] INFO com.firebase.server.forge.App$ - Graceful shutdown complete.
+19:30:21.750 [NamespaceSystem-akka.actor.default-dispatcher-5] INFO akka.event.slf4j.Slf4jLogger - Slf4jLogger started
+19:30:21.827 [main] INFO com.firebase.server.forge.App$ - Listening at 127.0.0.1:9000
+19:30:24.782 [NamespaceSystem-akka.actor.default-dispatcher-5] INFO com.firebase.core.namespace.NamespaceActor - risky-turn-default-rtdb successfully activated FBKV (SurveyIdle(0)) wait: 60ms, init: 0ms
+19:30:24.823 [NamespaceSystem-blocking-namespace-operation-dispatcher-7] INFO com.firebase.core.namespace.StateManager - Namespace risky-turn-default-rtdb status Active to Active
+19:30:25.411 [FirebaseWorkerPool-1-3] WARN com.firebase.server.forge.App$ - Received service account token eyJh...SJ9., assuming ownership.
+19:30:25.932 [FirebaseWorkerPool-1-4] WARN com.firebase.server.forge.App$ - Received service account token eyJh...yJ9., assuming ownership.
+19:30:25.997 [FirebaseWorkerPool-1-1] WARN com.firebase.server.forge.App$ - Received service account token eyJh...yJ9., assuming ownership.
+19:30:26.045 [FirebaseWorkerPool-1-2] WARN com.firebase.server.forge.App$ - Received service account token eyJh...CJ9., assuming ownership.
+19:30:28.060 [Thread-0] INFO com.firebase.server.forge.App$ - Attempting graceful shutdown.
+19:30:28.063 [NamespaceSystem-akka.actor.default-dispatcher-9] INFO com.firebase.core.namespace.Terminator$Terminator - 1 actors left to terminate: risky-turn-default-rtdb
+19:30:28.066 [NamespaceSystem-akka.actor.default-dispatcher-11] INFO com.firebase.core.namespace.NamespaceActor - stopped namespace actor for risky-turn-default-rtdb
+19:30:28.067 [Thread-0] INFO com.firebase.server.forge.App$ - Graceful shutdown complete.

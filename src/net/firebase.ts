@@ -9,17 +9,11 @@ import type { FirebaseApp } from "firebase/app";
  * a Firebase web key identifies a project, it does not authorise anything, and
  * the security rules in database.rules.json are the actual boundary. No
  * administrative credential, service account or TURN secret belongs here.
- *
- * PROVISIONAL: databaseURL. The real instance's URL carries its region and has
- * not been given yet; this is the default form and is right only if the
- * database was created in us-central1. The emulator overrides it, so the
- * checks pass either way — playing against the live project will not until
- * this is the true URL.
  */
 export const firebaseConfig = {
   apiKey: "AIzaSyC__q0zmoZWWMAddcA2chv06ySG6tXx61I",
   authDomain: "risky-turn.firebaseapp.com",
-  databaseURL: "https://risky-turn-default-rtdb.firebaseio.com",
+  databaseURL: "https://risky-turn-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "risky-turn",
   appId: "1:74281650271:web:80e1d9571aea50491633ea",
 } as const;
