@@ -278,8 +278,8 @@ body {
 .board__handover[data-player="6"] { background: var(--player-6); }
 
 /*
- * The place the build control sits in, kept through the turn whether or not
- * the control is in it, so that the map above it is one size all turn.
+ * The place a phase's own control sits in, kept through the turn whether or
+ * not a control is in it, so that the map above it is one size all turn.
  */
 .board__berth {
   display: flex;
@@ -287,7 +287,7 @@ body {
   min-height: 2.6rem;
 }
 
-.board__build {
+.board__act {
   flex: 1;
   min-height: 2.6rem;
   border: 0;
@@ -301,11 +301,11 @@ body {
   cursor: pointer;
 }
 
-.board__build[aria-pressed="true"] {
+.board__act[aria-pressed="true"] {
   background: var(--land);
 }
 
-.board__build:disabled {
+.board__act:disabled {
   opacity: 0.35;
   cursor: default;
 }

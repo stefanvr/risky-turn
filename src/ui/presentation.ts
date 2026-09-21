@@ -7,7 +7,7 @@ import {
 } from "../domain/game";
 import { BOMBER_REACH, withinBomberReach } from "../domain/reach";
 import { REINFORCEMENT_FLOOR, TERRITORIES_PER_ARMY } from "../domain/reinforcements";
-import { bordersEachOther } from "../domain/turn";
+import { bordersEachOther, canDigIn } from "../domain/turn";
 import type { GameState, Holding, PlayerId } from "../domain/game";
 import type { TerritoryId } from "../domain/map";
 
@@ -88,10 +88,17 @@ export interface TurnShown {
   readonly doing: string;
 }
 
+/** A control that belongs to one phase, named after what pressing it does. */
+export interface ControlShown {
+  readonly label: string;
+}
+
 export interface GamePresentation {
   readonly territories: readonly TerritoryPresentation[];
   readonly turn: TurnShown;
   readonly status: string;
+  /** The fortify phase's own control, or null where the move is not available. */
+  readonly digIn: ControlShown | null;
   readonly canEndPhase: boolean;
   readonly endPhaseLabel: string;
 }
@@ -129,6 +136,10 @@ export function presentGame(
     territories,
     turn: turnOf(state),
     status: note ?? selectionPrompt(state, selected) ?? statusOf(state),
+    digIn:
+      selected !== null && canDigIn(state, selected)
+        ? { label: `Dig in at ${nameOf(state, selected)}` }
+        : null,
     canEndPhase: state.winner === null && state.reinforcementsLeft === 0,
     endPhaseLabel: state.phase === "fortify" ? "End turn" : "End phase",
   };
@@ -245,7 +256,7 @@ function selectionPrompt(state: GameState, selected: TerritoryId | null): string
 
   const holding = state.holdings.get(selected);
   if (holding === undefined) return undefined;
-  const name = state.map.territories.find((t) => t.id === selected)?.name ?? selected;
+  const name = nameOf(state, selected);
 
   if (state.phase === "attack") {
     return holding.bombers > 0 && !holding.bombersFlown
@@ -254,9 +265,12 @@ function selectionPrompt(state: GameState, selected: TerritoryId | null): string
   }
   if (state.phase !== "fortify") return undefined;
 
-  return holding.line === null && holding.armies >= LINE_MINIMUM_GARRISON
-    ? `${name} selected. Tap it again to dig in, or tap where to move its armies.`
-    : `${name} selected. Tap where to move its armies.`;
+  return `${name} selected. Tap where to move its armies.`;
+}
+
+/** What a territory is called, for a line a player reads. */
+function nameOf(state: GameState, territory: TerritoryId): string {
+  return state.map.territories.find((candidate) => candidate.id === territory)?.name ?? territory;
 }
 
 /**

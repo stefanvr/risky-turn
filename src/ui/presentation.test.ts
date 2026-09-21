@@ -13,6 +13,39 @@ import type { GameState } from "../domain/game";
 
 const board = { alfa: "red", bravo: "blue", charlie: "blue", delta: "red", echo: "red" } as const;
 
+describe("the fortify phase's own control", () => {
+  const garrisoned = { alfa: LINE_MINIMUM_GARRISON + 1, bravo: 1, charlie: 1, delta: 1, echo: 1 };
+  const fortifying = (overrides = {}) =>
+    stateWhere(board, { phase: "fortify", armies: garrisoned, ...overrides });
+
+  it("names the territory it would dig in", () => {
+    expect(presentGame(fortifying(), "alfa").digIn).toEqual({ label: "Dig in at Alfa" });
+  });
+
+  it("is absent until a territory is chosen", () => {
+    expect(presentGame(fortifying(), null).digIn).toBeNull();
+  });
+
+  it("is absent where the rules would refuse the move", () => {
+    const thin = stateWhere(board, { phase: "fortify", armies: { ...garrisoned, alfa: 3 } });
+    expect(presentGame(thin, "alfa").digIn).toBeNull();
+    expect(presentGame(fortifying({ hasFortified: true }), "alfa").digIn).toBeNull();
+    expect(presentGame(stateWhere(board, { phase: "attack", armies: garrisoned }), "alfa").digIn)
+      .toBeNull();
+  });
+
+  it("is absent on ground the player does not hold, and on ground already dug in", () => {
+    expect(presentGame(fortifying(), "bravo").digIn).toBeNull();
+    const dug = stateWhere(board, { phase: "fortify", armies: garrisoned, lines: { alfa: 2 } });
+    expect(presentGame(dug, "alfa").digIn).toBeNull();
+  });
+
+  it("leaves the status line to say only what a tap does", () => {
+    expect(presentGame(fortifying(), "alfa").status).not.toMatch(/again/i);
+    expect(presentGame(fortifying(), "alfa").status).toMatch(/move its armies/i);
+  });
+});
+
 describe("what the board shows", () => {
   it("reports each territory's holder and army count", () => {
     const state = stateWhere(board, { armies: { alfa: 4 } });

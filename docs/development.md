@@ -101,6 +101,7 @@ particular choice. A fixture places one directly:
 |---|---|
 | `found-line` | The opponent holds a defensive line on Harrow, already discovered, garrisoned and rolling three dice. |
 | `bombers-vs-line` | The interlock: the opponent is dug in on Calder, and a squadron of three sits on Nale in the Oskan Deep — a march away around half the world, one hop across the water for a bomber. |
+| `ready-to-dig-in` | A turn already down to its fortify, with Cairn garrisoned heavily enough to dig in — the position the fortify phase's own control is offered in. |
 
 Fixtures are built from `newGame` and adjusted through the same `withHolding`
 the rules use, so a fixture cannot reach a position the game itself could not,

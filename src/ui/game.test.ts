@@ -125,35 +125,68 @@ describe("attacking by tapping", () => {
 describe("digging in", () => {
   const readyToFortify = (armies: Record<string, number>) =>
     stateWhere(board, { phase: "fortify", armies });
+  const garrisoned = { alfa: 6, bravo: 1, charlie: 1, delta: 1, echo: 1 };
+  const digButton = () => host.querySelector<HTMLButtonElement>('[data-role="dig-in"]')!;
+  const lineOn = (id: string) =>
+    host.querySelector(`[data-line-for="${id}"]`)?.getAttribute("data-line");
 
-  it("digs in when a garrisoned territory is tapped twice", () => {
-    mountGame(host, readyToFortify({ alfa: 6, bravo: 1, charlie: 1, delta: 1, echo: 1 }), fixedDice([1]));
-    tap("alfa");
-    tap("alfa");
-    expect(host.querySelector('[data-line-for="alfa"]')?.getAttribute("data-line")).toBe("building");
+  it("offers nothing until a territory is chosen", () => {
+    mountGame(host, readyToFortify(garrisoned), fixedDice([1]));
+    expect(digButton().hidden).toBe(true);
   });
 
-  it("says so when a territory starts digging in", () => {
-    mountGame(host, readyToFortify({ alfa: 6, bravo: 1, charlie: 1, delta: 1, echo: 1 }), fixedDice([1]));
+  it("names the chosen territory on the control, so the action is read before it is taken", () => {
+    mountGame(host, readyToFortify(garrisoned), fixedDice([1]));
     tap("alfa");
+    expect(digButton().hidden).toBe(false);
+    expect(digButton().textContent).toMatch(/dig in/i);
+    expect(digButton().textContent).toMatch(/alfa/i);
+  });
+
+  it("digs in when the control is pressed", () => {
+    mountGame(host, readyToFortify(garrisoned), fixedDice([1]));
     tap("alfa");
+    digButton().click();
+    expect(lineOn("alfa")).toBe("building");
     expect(status()).toMatch(/alfa/i);
     expect(status()).toMatch(/digging in/i);
-    expect(status()).not.toMatch(/fortify once/i);
   });
 
-  it("says why a thin garrison cannot dig in", () => {
-    mountGame(host, readyToFortify({ alfa: 3, bravo: 1, charlie: 1, delta: 1, echo: 1 }), fixedDice([1]));
+  it("withholds the control from a garrison too thin to hold a line", () => {
+    mountGame(host, readyToFortify({ ...garrisoned, alfa: 3 }), fixedDice([1]));
     tap("alfa");
-    tap("alfa");
-    expect(status()).toMatch(/5 armies/i);
-    expect(host.querySelector('[data-line-for="alfa"]')?.getAttribute("data-line")).toBe("none");
+    // The rules would refuse this move. A control that cannot be pressed is a
+    // better answer than one that spends the turn's fortify and then explains.
+    expect(digButton().hidden).toBe(true);
   });
 
-  it("offers the choice once a garrisoned territory is selected", () => {
-    mountGame(host, readyToFortify({ alfa: 6, bravo: 1, charlie: 1, delta: 1, echo: 1 }), fixedDice([1]));
+  it("lets a chosen territory go on a second tap, without spending the fortify", () => {
+    mountGame(host, readyToFortify(garrisoned), fixedDice([1]));
     tap("alfa");
-    expect(status()).toMatch(/dig in/i);
+    tap("alfa");
+    expect(lineOn("alfa")).toBe("none");
+    expect(digButton().hidden).toBe(true);
+  });
+
+  it("keeps the control out of the way outside the fortify phase", () => {
+    mountGame(host, stateWhere(board, { phase: "attack", armies: garrisoned }), fixedDice([1]));
+    tap("alfa");
+    expect(digButton().hidden).toBe(true);
+  });
+
+  it("withdraws the control once the turn's fortify is spent", () => {
+    mountGame(host, readyToFortify(garrisoned), fixedDice([1]));
+    tap("alfa");
+    digButton().click();
+    tap("alfa");
+    expect(digButton().hidden).toBe(true);
+  });
+
+  it("holds the control's place on screen, like every other control of a phase", () => {
+    mountGame(host, readyToFortify(garrisoned), fixedDice([1]));
+    const slot = digButton().closest('[data-role="control-slot"]') as HTMLElement | null;
+    expect(slot).not.toBeNull();
+    expect(slot!.hidden).toBe(false);
   });
 });
 
@@ -275,7 +308,7 @@ describe("bombers", () => {
 
   it("holds the control's place on screen once the phase it belongs to is over", () => {
     mountGame(host, stateWhere(board, { phase: "attack" }), fixedDice([1]));
-    const slot = buildButton().closest('[data-role="build-slot"]') as HTMLElement | null;
+    const slot = buildButton().closest('[data-role="control-slot"]') as HTMLElement | null;
     // The button goes; its berth stays, so the map below it is the same size
     // in every phase of a turn and does not shift under a thumb mid-move.
     expect(slot).not.toBeNull();

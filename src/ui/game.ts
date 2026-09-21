@@ -90,18 +90,25 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
   battleLine.setAttribute("role", "status");
 
   const buildControl = document.createElement("button");
-  buildControl.className = "board__build";
+  buildControl.className = "board__act";
   buildControl.type = "button";
   buildControl.setAttribute("data-role", "build-bomber");
   buildControl.hidden = true;
 
-  // The button is only offered while armies are being placed, but its berth
-  // stays for the whole turn: a map that grows the moment the phase changes
-  // moves every target on it under a thumb already reaching for one.
-  const buildSlot = document.createElement("div");
-  buildSlot.className = "board__berth";
-  buildSlot.setAttribute("data-role", "build-slot");
-  buildSlot.append(buildControl);
+  const digControl = document.createElement("button");
+  digControl.className = "board__act";
+  digControl.type = "button";
+  digControl.setAttribute("data-role", "dig-in");
+  digControl.hidden = true;
+
+  // Each phase puts its own control here and no two share a moment, so one
+  // berth serves them all. It stays for the whole turn whether it is filled or
+  // not: a map that grows the moment the phase changes moves every target on
+  // it under a thumb already reaching for one.
+  const controlSlot = document.createElement("div");
+  controlSlot.className = "board__berth";
+  controlSlot.setAttribute("data-role", "control-slot");
+  controlSlot.append(buildControl, digControl);
 
   const endControl = document.createElement("button");
   endControl.className = "board__end";
@@ -114,7 +121,7 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
   handover.setAttribute("data-role", "handover");
   handover.hidden = true;
 
-  host.append(bar, legend, map, handover, battleLine, status, buildSlot, endControl);
+  host.append(bar, legend, map, handover, battleLine, status, controlSlot, endControl);
   fillLegend(legend, initial);
 
   const render = (): void => {
@@ -137,7 +144,7 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
     handover.hidden = !passing;
     battleLine.hidden = passing || reading || lastAction === undefined;
     // The berth leaves the screen only when the board itself does.
-    buildSlot.hidden = passing || reading;
+    controlSlot.hidden = passing || reading;
     buildControl.hidden = state.phase !== "deploy" || state.winner !== null;
 
     if (taking !== null) {
@@ -167,6 +174,10 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
       : `Build a bomber (${BOMBER_COST})`;
     buildControl.disabled = state.reinforcementsLeft < BOMBER_COST;
     buildControl.setAttribute("aria-pressed", String(buyingBomber));
+    // A control the rules would refuse is not offered at all, so the player
+    // never spends the turn's only fortify on a tap they did not mean.
+    digControl.hidden = shown.digIn === null;
+    if (shown.digIn !== null) digControl.textContent = shown.digIn.label;
     endControl.textContent = shown.endPhaseLabel;
     endControl.disabled = !shown.canEndPhase;
   };
@@ -282,15 +293,9 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
         tryMove(() => {
           const from = selected!;
           selected = null;
-          if (from === tapped) {
-            /*
-             * PROVISIONAL: digging in is a second tap on the chosen territory
-             * rather than its own control, which keeps one button on screen.
-             * The status line offers it, so it is not left to be discovered.
-             */
-            state = digIn(state, from);
-            return `${nameOf(from)} is digging in. It holds from the end of your next turn.`;
-          }
+          // The cell already chosen simply lets go. Digging in has its own
+          // control now, so no tap of a territory can spend the turn's fortify.
+          if (from === tapped) return;
           /*
            * PROVISIONAL: a fortify moves everything that can leave, keeping one
            * army behind, rather than asking how many. It is one gesture instead
@@ -325,6 +330,16 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
   info.addEventListener("click", () => {
     reading = !reading;
     render();
+  });
+
+  digControl.addEventListener("click", () => {
+    const where = selected;
+    if (where === null) return;
+    selected = null;
+    tryMove(() => {
+      state = digIn(state, where);
+      return `${nameOf(where)} is digging in. It holds from the end of your next turn.`;
+    });
   });
 
   buildControl.addEventListener("click", () => {

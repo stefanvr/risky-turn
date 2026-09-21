@@ -229,6 +229,22 @@ export function digIn(state: GameState, territory: TerritoryId): GameState {
   };
 }
 
+/**
+ * Whether digging in here is a move the rules allow, asked by the interface so
+ * that a control it cannot honour is never offered. It answers by running the
+ * move and throwing the result away, so the two can never drift apart: there
+ * is one statement of what a line costs, and it is `digIn` itself.
+ */
+export function canDigIn(state: GameState, territory: TerritoryId): boolean {
+  try {
+    digIn(state, territory);
+    return true;
+  } catch (error) {
+    if (error instanceof IllegalMoveError) return false;
+    throw error;
+  }
+}
+
 /** Moves armies between two of the player's own territories, once per turn. */
 export function fortify(
   state: GameState,

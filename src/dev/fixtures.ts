@@ -13,14 +13,14 @@ import type { GameState, PlayerId } from "../domain/game";
  * itself could never reach — and if the rules change underneath it, it breaks
  * rather than quietly lying.
  */
-export type FixtureName = "found-line" | "bombers-vs-line";
+export type FixtureName = "found-line" | "bombers-vs-line" | "ready-to-dig-in";
 
 export class UnknownFixtureError extends Error {
   override readonly name = "UnknownFixtureError";
 }
 
 export function fixtureNames(): readonly string[] {
-  return ["found-line", "bombers-vs-line"];
+  return ["found-line", "bombers-vs-line", "ready-to-dig-in"];
 }
 
 export function fixtureNamed(
@@ -33,6 +33,8 @@ export function fixtureNamed(
       return foundLine(map, players);
     case "bombers-vs-line":
       return bombersAgainstALine(map, players);
+    case "ready-to-dig-in":
+      return readyToDigIn(map, players);
     default:
       throw new UnknownFixtureError(
         `no fixture named "${name}"; try one of: ${fixtureNames().join(", ")}`,
@@ -84,4 +86,21 @@ function foundLine(map: GameMap, players: readonly PlayerId[]): GameState {
     bombers: 0,
     bombersFlown: false,
   });
+}
+
+/**
+ * A turn already down to its fortify, with one territory garrisoned heavily
+ * enough to dig in. It is the position the fortify phase's own control is
+ * offered in, which a dealt game reaches only after several turns of building.
+ */
+function readyToDigIn(map: GameMap, players: readonly PlayerId[]): GameState {
+  const player = players[0]!;
+  const opened = newGame(map, players, seededRandom(42));
+
+  const staged = withHolding(opened, "cairn", {
+    ...opened.holdings.get("cairn")!,
+    owner: player,
+    armies: 7,
+  });
+  return { ...staged, phase: "fortify", reinforcementsLeft: 0 };
 }
