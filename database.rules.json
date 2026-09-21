@@ -2,6 +2,12 @@
   "rules": {
     "rooms": {
       "$code": {
+        // The host may take its own room away and do nothing else at this
+        // level: a write that leaves anything behind is refused. This is what
+        // lets a finished room be cleared, and what lets onDisconnect clear a
+        // room whose host closed the tab without ever connecting.
+        ".write": "auth != null && data.child('host/uid').val() === auth.uid && !newData.exists()",
+
         ".read": "auth != null && (data.child('host/uid').val() === auth.uid || data.child('guest/uid').val() === auth.uid)",
 
         "host": {

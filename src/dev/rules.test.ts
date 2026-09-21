@@ -17,4 +17,14 @@ describe("what a browser may reach in the database", () => {
     const { exchangeInOwnRoom } = await import("./rulesHarness");
     await expect(exchangeInOwnRoom()).resolves.toBe(true);
   });
+
+  it("lets the host clear the room it made", async () => {
+    const { hostClearsOwnRoom } = await import("./rulesHarness");
+    await expect(hostClearsOwnRoom()).resolves.toBe(true);
+  });
+
+  it("does not let the guest clear the room", async () => {
+    const { guestClearsTheRoom } = await import("./rulesHarness");
+    await expect(guestClearsTheRoom()).rejects.toThrow(/permission|denied/i);
+  });
 });

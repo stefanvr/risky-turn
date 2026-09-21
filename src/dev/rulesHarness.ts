@@ -1,6 +1,6 @@
 import { deleteApp, initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth, signInAnonymously } from "firebase/auth";
-import { connectDatabaseEmulator, get, getDatabase, ref, set } from "firebase/database";
+import { connectDatabaseEmulator, get, getDatabase, ref, remove, set } from "firebase/database";
 import { firebaseConfig } from "../net/firebase";
 import type { Database } from "firebase/database";
 import type { FirebaseApp } from "firebase/app";
@@ -60,6 +60,38 @@ export async function exchangeInOwnRoom(): Promise<boolean> {
     const back = await get(ref(host.database, `rooms/${code}/answer`));
 
     return seen.val()?.sdp === "an offer" && back.val()?.sdp === "an answer";
+  } finally {
+    await deleteApp(host.app);
+    await deleteApp(guest.app);
+  }
+}
+
+export async function hostClearsOwnRoom(): Promise<boolean> {
+  const host = await somebody();
+  const guest = await somebody();
+  const code = room();
+  try {
+    await set(ref(host.database, `rooms/${code}/host`), { uid: host.uid });
+    await set(ref(guest.database, `rooms/${code}/guest`), { uid: guest.uid });
+    await remove(ref(host.database, `rooms/${code}`));
+    // Reading it back is itself refused, and rightly: with the room gone there
+    // is no host to match, so nobody may look at where it was. A remove that
+    // did not throw is the whole of what there is to check.
+    return true;
+  } finally {
+    await deleteApp(host.app);
+    await deleteApp(guest.app);
+  }
+}
+
+export async function guestClearsTheRoom(): Promise<void> {
+  const host = await somebody();
+  const guest = await somebody();
+  const code = room();
+  try {
+    await set(ref(host.database, `rooms/${code}/host`), { uid: host.uid });
+    await set(ref(guest.database, `rooms/${code}/guest`), { uid: guest.uid });
+    await remove(ref(guest.database, `rooms/${code}`));
   } finally {
     await deleteApp(host.app);
     await deleteApp(guest.app);

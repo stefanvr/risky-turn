@@ -22,7 +22,10 @@ credential or service account is present in browser code.
 
 A room is a place to be introduced and nothing else. It holds the two players,
 the offer, the answer and the candidates, and is deleted as soon as the channel
-is open. `database.rules.json` is the boundary between one match and another,
+is open — and if it never opens, the database is told at the moment the room is
+made to delete it when the host's connection drops, because there is no server
+to sweep up afterwards. Clearing a room is the host's alone, and it is the only
+thing the rules let anyone do at that path. `database.rules.json` is the boundary between one match and another,
 and is the only thing standing between a guessed six-digit code and somebody
 else's game.
 

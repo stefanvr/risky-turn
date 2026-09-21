@@ -1,4 +1,4 @@
-import { get, onChildAdded, onValue, push, ref, remove, set } from "firebase/database";
+import { get, onChildAdded, onDisconnect, onValue, push, ref, remove, set } from "firebase/database";
 import type { Database } from "firebase/database";
 import type { Connected } from "./firebase";
 
@@ -54,9 +54,15 @@ function roomAt(database: Database, code: string, side: Side): Room {
         if (value !== null) found(value);
       });
     },
+    /*
+     * Only the host can clear a room, and the rules allow it nothing else at
+     * that path. The failure is not swallowed: a room that cannot be cleared
+     * is one that stays on the database holding both players' identifiers for
+     * good, which is worth failing loudly over.
+     */
     async close() {
       if (side !== "host") return;
-      await remove(ref(database, `rooms/${code}`)).catch(() => undefined);
+      await remove(ref(database, `rooms/${code}`));
     },
   };
 }
@@ -69,6 +75,12 @@ export async function openRoom(connected: Connected, code: string): Promise<Room
   } catch {
     throw new RoomTakenError(`a game is already waiting on ${code}`);
   }
+  /*
+   * A host who closes the tab before anyone joins would otherwise leave the
+   * room standing for ever. There is no server to sweep up, so the database is
+   * told now what to do when this browser goes away.
+   */
+  await onDisconnect(ref(connected.database, `rooms/${code}`)).remove();
   return roomAt(connected.database, code, "host");
 }
 
