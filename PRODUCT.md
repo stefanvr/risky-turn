@@ -52,19 +52,20 @@ they are declared. A round needs only a phone and a few minutes of attention.
 - 2026-09-20 — The opening. Territories are dealt at random and opening armies
   are spread automatically, so the first decision a player makes is several
   turns into the game. Deferred for the same reason.
-- 2026-09-20 — The palette is not settled. It stays PROVISIONAL in
-  src/styles.css until players have colours, because six distinguishable player
-  colours sitting on the map is the constraint the palette actually has to
-  survive, and that does not exist yet.
-- 2026-09-20 — Player colours are placeholders, one token per player in turn
-  order, PROVISIONAL in src/styles.css alongside the palette. They read clearly
-  enough to play with and are deliberately not settled yet.
-- 2026-09-20 — The six continent colours are kept at full strength rather than
-  softened, because the experiment is only worth judging at the strength it was
-  meant to be played at. They stay PROVISIONAL in src/styles.css alongside the
-  rest of the palette, which waits on players having colours.
-- 2026-09-20 — On taking a territory the attacker advances with everything but
-  one army, rather than being asked how many to move. It stays PROVISIONAL in
-  src/domain/turn.ts. The choice is real tactical depth, but a second dialog in
-  the middle of an attack is real friction on a phone, and the trade-off is
-  easier to judge once a turn can actually be played.
+- 2026-09-21 — The numbers a game is balanced on stand at their current values
+  until a full game has been played: what a bomber costs and what its die kills
+  on, how far a bomber reaches, what a defensive line costs to hold and how long
+  it takes to harden, how many armies open a game, and what each continent pays.
+  None of them can be judged from a screenshot; they need a game. They stay
+  PROVISIONAL where they are defined.
+- 2026-09-21 — Both automatic movements stand: on taking a territory the
+  attacker advances with everything but one army, and a fortify moves everything
+  that can leave. Each trades a real choice for a gesture that is faster on a
+  phone, and the trade is only worth judging once a game has been played
+  through. PROVISIONAL in src/domain/turn.ts and src/ui/game.ts.
+- 2026-09-21 — The look stands as it is until a styling session takes it up as
+  one piece: the palette, the six player colours, the six continent coasts and
+  the accent that marks a poised strike. Colours settled one at a time do not
+  survive being seen together, and six distinguishable player colours sitting on
+  the map is the constraint the whole palette has to meet. All PROVISIONAL in
+  src/styles.css.
