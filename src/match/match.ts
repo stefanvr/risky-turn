@@ -13,7 +13,9 @@ export type Action =
   | { readonly kind: "attack"; readonly from: TerritoryId; readonly to: TerritoryId }
   | { readonly kind: "digIn"; readonly territory: TerritoryId }
   | { readonly kind: "fortify"; readonly from: TerritoryId; readonly to: TerritoryId; readonly armies: number }
-  | { readonly kind: "endPhase" };
+  | { readonly kind: "endPhase" }
+  /** Not a move: a seat announcing itself and asking for the board. */
+  | { readonly kind: "hello" };
 
 /**
  * What just happened, as the rules produced it. Every seat is told, because a
@@ -88,7 +90,10 @@ export function openMatch({ state, dice, transport }: MatchOptions): Match {
   const seats = new Map<PlayerId, Seat>();
 
   const tell = (outcome?: Outcome, refused?: { player: PlayerId; why: string }): void => {
-    for (const player of seats.keys()) {
+    // Everyone in the game is told, whether or not their seat is in this
+    // process: a seat may be a tab or a browser away, and the host does not
+    // know the difference.
+    for (const player of game.players) {
       transport.deliver(player, {
         view: viewFor(game, player),
         outcome,
@@ -98,6 +103,11 @@ export function openMatch({ state, dice, transport }: MatchOptions): Match {
   };
 
   transport.onAction((player, action) => {
+    if (action.kind === "hello") {
+      // A seat that has just arrived is sent the board before it plays.
+      transport.deliver(player, { view: viewFor(game, player) });
+      return;
+    }
     if (player !== game.currentPlayer) return;
     try {
       const applied = apply(game, action, dice);
@@ -154,6 +164,9 @@ function apply(state: GameState, action: Action, dice: Dice): Applied {
       return { state: fortify(state, action.from, action.to, action.armies) };
     case "endPhase":
       return { state: endPhase(state) };
+    case "hello":
+      // Answered before it reaches here.
+      return { state };
     case "bomb": {
       const attacker = state.currentPlayer;
       const raid = bomb(state, action.from, action.to, dice);
@@ -226,4 +239,45 @@ export function sharedSeat(match: Match, players: readonly PlayerId[]): Seat {
       listeners.push(listener);
     },
   };
+}
+
+/**
+ * A seat in a process that does not hold the host — another tab, later another
+ * browser. It announces itself and waits to be sent the board, because until
+ * the host answers there is nothing for a screen to draw.
+ *
+ * The hello is repeated until it is answered, so the two pages may be opened
+ * in either order.
+ */
+export function joinSeat(transport: Transport, player: PlayerId): Promise<Seat> {
+  return new Promise((resolve) => {
+    let latest: Update | undefined;
+    const listeners: ((update: Update) => void)[] = [];
+
+    const seat: Seat = {
+      player,
+      view: () => latest!.view,
+      outcome: () => latest?.outcome,
+      refusal: () => latest?.refused,
+      send: (action) => transport.submit(player, action),
+      onUpdate: (listener) => {
+        listeners.push(listener);
+      },
+    };
+
+    const knocking = setInterval(() => transport.submit(player, { kind: "hello" }), 300);
+
+    transport.onUpdate(player, (update) => {
+      const first = latest === undefined;
+      latest = update;
+      if (first) {
+        clearInterval(knocking);
+        resolve(seat);
+        return;
+      }
+      for (const listener of listeners) listener(update);
+    });
+
+    transport.submit(player, { kind: "hello" });
+  });
 }

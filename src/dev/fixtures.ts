@@ -20,7 +20,7 @@ export class UnknownFixtureError extends Error {
 }
 
 export function fixtureNames(): readonly string[] {
-  return ["found-line", "bombers-vs-line", "ready-to-dig-in"];
+  return ["found-line", "bombers-vs-line", "ready-to-dig-in", "secret-line"];
 }
 
 export function fixtureNamed(
@@ -35,6 +35,8 @@ export function fixtureNamed(
       return bombersAgainstALine(map, players);
     case "ready-to-dig-in":
       return readyToDigIn(map, players);
+    case "secret-line":
+      return secretLine(map, players);
     default:
       throw new UnknownFixtureError(
         `no fixture named "${name}"; try one of: ${fixtureNames().join(", ")}`,
@@ -69,6 +71,26 @@ function bombersAgainstALine(map: GameMap, players: readonly PlayerId[]): GameSt
   });
   // The position exists to be flown from, and a squadron cannot fly during a
   // deploy: the fixture opens on the phase its point is made in.
+  return { ...staged, phase: "attack", reinforcementsLeft: 0 };
+}
+
+/**
+ * The opponent is dug in on Calder and nobody has run into it yet, so the line
+ * is on the board for its holder and on no board but theirs. It is the one
+ * position that tells two screens apart: the same cell, two players, two
+ * truths.
+ */
+function secretLine(map: GameMap, players: readonly PlayerId[]): GameState {
+  const opponent = players[1]!;
+  const opened = newGame(map, players, seededRandom(42));
+
+  const staged = withHolding(opened, "calder", {
+    owner: opponent,
+    armies: 6,
+    line: { turnsUntilHolding: 0, revealed: false },
+    bombers: 0,
+    bombersFlown: false,
+  });
   return { ...staged, phase: "attack", reinforcementsLeft: 0 };
 }
 

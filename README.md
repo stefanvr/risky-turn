@@ -46,6 +46,7 @@ named here is the one that holds.
 | the rules of a turn, and what makes a move illegal | `src/domain/turn.ts` |
 | what one player may be told about the board | `src/domain/view.ts` |
 | how a match is hosted, and what a seat may ask for | `src/match/match.ts` |
+| how two tabs reach one match | `docs/development.md` |
 | how many armies a turn grants | `src/domain/reinforcements.ts` |
 | how a battle is decided | `src/domain/combat.ts` |
 | what a cell shows, what the turn bar says, what the legend lists | `src/ui/presentation.ts` |

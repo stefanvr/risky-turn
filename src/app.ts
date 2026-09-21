@@ -21,18 +21,36 @@ const { state, seed } = chooseStartingState(window.location.search, {
 const dice = diceFrom(seededRandom(seed + 1));
 
 /*
+ * Development only: the constant folds away in a production build and takes
+ * every branch below with it.
+ *
  * `?seat=` opens the page as one player's own screen rather than as the shared
- * device, which is how a seat watching someone else's turn can be looked at
- * before there is a network to reach one over. Development only: the constant
- * folds away in a production build and takes the branch with it.
+ * device. Adding `?room=` puts that screen on a match shared with the other
+ * tabs naming the same room — `&host` on the tab that owns the game, nothing
+ * on the tabs that join it. Until join codes exist, this is how two seats
+ * reach one match. docs/development.md has the pair of URLs.
  */
-const seat = import.meta.env.DEV ? new URLSearchParams(window.location.search).get("seat") : null;
+const parameters = import.meta.env.DEV ? new URLSearchParams(window.location.search) : undefined;
+const seat = parameters?.get("seat") ?? null;
 
 if (seat !== null) {
-  const { openMatch } = await import("./match/match");
-  const { loopback } = await import("./match/loopback");
   const { mountSeat } = await import("./ui/seat");
-  mountSeat(host, openMatch({ state, dice, transport: loopback() }).seat(seat));
+  const { openMatch, joinSeat } = await import("./match/match");
+  const room = parameters!.get("room");
+
+  if (room === null) {
+    const { loopback } = await import("./match/loopback");
+    mountSeat(host, openMatch({ state, dice, transport: loopback() }).seat(seat));
+  } else {
+    const { tabTransport } = await import("./match/tabs");
+    const transport = tabTransport(room);
+    mountSeat(
+      host,
+      parameters!.has("host")
+        ? openMatch({ state, dice, transport }).seat(seat)
+        : await joinSeat(transport, seat),
+    );
+  }
 } else {
   mountGame(host, state, dice);
 }

@@ -122,3 +122,50 @@ something.
 
 Adding a fixture means adding its name to `fixtureNames()` as well as to the
 switch, because the gate test iterates that list.
+
+## Two seats, two tabs
+
+A match has one authoritative host and one seat per player. Until join codes
+exist, two tabs of one browser reach the same match by naming the same room:
+
+```sh
+pnpm dev
+```
+
+Open the tab that owns the game:
+
+```
+http://localhost:5173/risky-turn/?room=one&seat=Red&host&fixture=secret-line
+```
+
+and, in a second tab, the seat that joins it:
+
+```
+http://localhost:5173/risky-turn/?room=one&seat=Blue&fixture=secret-line
+```
+
+Play in Red's tab and Blue's follows. The tabs may be opened in either order:
+a joining seat knocks until the host answers, and is sent the board before it
+plays. Leave `?fixture=` off for a dealt game; both tabs must name the same
+fixture and seed, because the host builds the position and the joining tab is
+told it.
+
+`secret-line` is the position that tells the two screens apart: Blue is dug in
+on Calder and nobody has run into it, so Blue's tab draws the line and Red's
+tab is never sent it. Reading Red's page will not find it, because redaction
+happens in the host before anything is sent (`src/domain/view.ts`).
+
+This is a browser-to-browser boundary, not a network one: `BroadcastChannel`
+carries the messages, and every one of them is serialised on the way across.
+It proves the seam, not connectivity between machines.
+
+### The check
+
+`src/dev/tabs.test.ts` drives exactly the two tabs above in a real Chromium
+against a real dev server, and is part of `pnpm check`. It needs the Chromium
+Playwright downloads:
+
+```sh
+pnpm exec playwright install chromium
+```
+
