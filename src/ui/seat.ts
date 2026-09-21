@@ -220,9 +220,9 @@ export function mountSeat(host: Element, seat: Seat, options: SeatOptions = {}):
     if (!playing) {
       digControl.hidden = true;
       /*
-       * PROVISIONAL: what a watching seat's status line says. The turn bar
-       * already names the player and the phase, so this only has to say that
-       * the screen is not waiting on its own player.
+       * The turn bar already names the player and the phase, so the status
+       * line only has to say that this screen is not waiting on its own
+       * player — and that it will be.
        */
       status.textContent = `${turn.player} is playing. Your turn comes round.`;
       showAction(battleLine, lastAction);

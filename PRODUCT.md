@@ -34,6 +34,9 @@ they are declared. A round needs only a phone and a few minutes of attention.
   turns and shows the match as it happens, told only what that player knows.
 - A match can be read back. What has happened during play is available to a
   player while they play, reached the same way the game's numbers are.
+- A match depends on the player who started it. If they leave, it ends for
+  everyone: there is no handing a match on to somebody else and no waiting for
+  its owner to come back.
 - The screen states at all times whose turn it is, in that player's own colour,
   and what the turn still owes. What just happened is reported separately and
   never displaces it: on a shared phone, the standing question and the last
