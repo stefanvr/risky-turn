@@ -22,6 +22,7 @@ function board(
     playerNumber: 1,
     armies: 1,
     bombers: 0,
+    squadron: "ready" as const,
     selected: false,
     line: "none" as const,
     poised: null,

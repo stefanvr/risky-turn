@@ -46,6 +46,37 @@ describe("the fortify phase's own control", () => {
   });
 });
 
+describe("a squadron that has already flown", () => {
+  const withSquadron = (overrides = {}) =>
+    stateWhere(board, { phase: "attack", armies: { alfa: 3 }, bombers: { alfa: 2 }, ...overrides });
+
+  const squadronOn = (state: GameState, id: string) =>
+    presentGame(state, null).territories.find((t) => t.id === id)?.squadron;
+
+  it("reads ready while it can still fly", () => {
+    expect(squadronOn(withSquadron(), "alfa")).toBe("ready");
+  });
+
+  it("reads spent once it has flown this turn", () => {
+    const flown = withHolding(withSquadron(), "alfa", {
+      ...withSquadron().holdings.get("alfa")!,
+      bombersFlown: true,
+    });
+    expect(squadronOn(flown, "alfa")).toBe("spent");
+  });
+
+  it("says nothing about an opponent's squadron, whose turn this is not", () => {
+    // The phone shows the works of whoever's turn it is. A squadron that flew
+    // on a turn this player was not allowed to watch is not theirs to read.
+    const theirs = stateWhere(board, { phase: "attack", bombers: { bravo: 2 } });
+    const flown = withHolding(theirs, "bravo", {
+      ...theirs.holdings.get("bravo")!,
+      bombersFlown: true,
+    });
+    expect(squadronOn(flown, "bravo")).toBe("ready");
+  });
+});
+
 describe("what the board shows", () => {
   it("reports each territory's holder and army count", () => {
     const state = stateWhere(board, { armies: { alfa: 4 } });

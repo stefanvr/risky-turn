@@ -95,6 +95,7 @@ export function createMapView(map: GameMap): MapView {
         const squadron = squadrons.get(shown.id);
         if (squadron) {
           squadron.group.setAttribute("data-bombers", String(shown.bombers));
+          squadron.group.setAttribute("data-squadron", shown.squadron);
           squadron.group.style.display = shown.bombers > 0 ? "" : "none";
           squadron.group.setAttribute("data-poised", shown.poised ?? "none");
           squadron.count.textContent = String(shown.bombers);
@@ -114,7 +115,7 @@ export function createMapView(map: GameMap): MapView {
         region.setAttribute(
           "aria-label",
           `${shown.name}, held by ${shown.owner}, ${armiesInWords(shown.armies)}` +
-            `${bombersInWords(shown.bombers)}${lineInWords(shown.line)}`,
+            `${bombersInWords(shown.bombers, shown.squadron)}${lineInWords(shown.line)}`,
         );
         army.count.textContent = String(shown.armies);
         army.group.setAttribute("data-poised", shown.poised ?? "none");
@@ -363,9 +364,10 @@ function drawSeaLinks(map: GameMap): SVGElement {
   return water;
 }
 
-function bombersInWords(bombers: number): string {
+function bombersInWords(bombers: number, squadron: TerritoryPresentation["squadron"]): string {
   if (bombers === 0) return "";
-  return bombers === 1 ? ", 1 bomber" : `, ${bombers} bombers`;
+  const spent = squadron === "spent" ? ", already flown this turn" : "";
+  return (bombers === 1 ? ", 1 bomber" : `, ${bombers} bombers`) + spent;
 }
 
 function lineInWords(line: TerritoryPresentation["line"]): string {

@@ -67,7 +67,9 @@ function bombersAgainstALine(map: GameMap, players: readonly PlayerId[]): GameSt
     bombers: 0,
     bombersFlown: false,
   });
-  return staged;
+  // The position exists to be flown from, and a squadron cannot fly during a
+  // deploy: the fixture opens on the phase its point is made in.
+  return { ...staged, phase: "attack", reinforcementsLeft: 0 };
 }
 
 /**

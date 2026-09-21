@@ -26,6 +26,8 @@
   --coast-4: #ffd84d;
   --coast-5: #c08cff;
   --coast-6: #ff6fd0;
+  /* A force that has been spent this turn: present and countable, not live. */
+  --spent: #2b3d4c;
   /* Every border between two cells, whichever continents they are in. */
   --border: #64778a;
   --ink: #eef3f7;
@@ -499,4 +501,14 @@ body {
 .territory__armies[data-poised="bombers"],
 .territory__bombers[data-poised="armies"] {
   opacity: 0.4;
+}
+
+/*
+ * A squadron with its flight already spent. It goes inert rather than faint:
+ * stepping a force back is what opacity says here, and a spent squadron is a
+ * different statement — still on the board, still counted, out of this turn.
+ */
+.territory__bombers[data-squadron="spent"] .force__icon,
+.territory__bombers[data-squadron="spent"] .force__count {
+  fill: var(--spent);
 }

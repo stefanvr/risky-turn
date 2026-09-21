@@ -330,6 +330,40 @@ describe("bombers", () => {
     expect(squadron("alfa")).toBe("2");
   });
 
+  it("puts a squadron out of the turn once it has flown", () => {
+    const armed = stateWhere(board, {
+      phase: "attack",
+      armies: { alfa: 2, bravo: 4 },
+      bombers: { alfa: 2 },
+    });
+    mountGame(host, armed, fixedDice([6, 5]));
+    const flownState = () =>
+      host.querySelector('[data-bombers-for="alfa"]')?.getAttribute("data-squadron");
+
+    expect(flownState()).toBe("ready");
+    tap("alfa");
+    tap("alfa");
+    tap("bravo");
+    // The planes are still there and still counted. What has gone is the turn
+    // they had left, which the player should not have to tap to discover.
+    expect(flownState()).toBe("spent");
+    expect(squadron("alfa")).toBe("2");
+  });
+
+  it("says a spent squadron is spent to a reader who cannot see the colour", () => {
+    const armed = stateWhere(board, {
+      phase: "attack",
+      armies: { alfa: 2, bravo: 4 },
+      bombers: { alfa: 2 },
+    });
+    mountGame(host, armed, fixedDice([6, 5]));
+    tap("alfa");
+    tap("alfa");
+    tap("bravo");
+    const label = host.querySelector('[data-territory="alfa"]')?.getAttribute("aria-label") ?? "";
+    expect(label).toMatch(/flown/i);
+  });
+
   it("shows the run's dice and what it destroyed", () => {
     const armed = stateWhere(board, {
       phase: "attack",

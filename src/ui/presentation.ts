@@ -19,6 +19,8 @@ export interface TerritoryPresentation {
   readonly playerNumber: number;
   readonly armies: number;
   readonly bombers: number;
+  /** Whether these bombers still have their flight this turn. */
+  readonly squadron: SquadronShown;
   readonly selected: boolean;
   /** "building" while a declared line is still arming, "holding" once it protects. */
   readonly line: LineShown;
@@ -38,6 +40,12 @@ export type Reach = "in" | "out" | null;
 export type Poised = "armies" | "bombers" | null;
 
 export type LineShown = "none" | "building" | "holding";
+
+/**
+ * Whether a squadron still has its flight this turn. Only the player whose
+ * turn it is has one to spend, so only their squadrons ever read as spent.
+ */
+export type SquadronShown = "ready" | "spent";
 
 export interface RaidShown {
   readonly attacker: PlayerId;
@@ -123,6 +131,7 @@ export function presentGame(
       playerNumber: playerNumberOf(state, holding.owner),
       armies: holding.armies,
       bombers: holding.bombers,
+      squadron: squadronShown(holding, state.currentPlayer),
       // A cell with its squadron armed is still the cell that is acting, so
       // it keeps the outline even though it is no longer the tap-selection.
       selected: territory.id === selected || territory.id === (armed ?? null),
@@ -319,6 +328,16 @@ function reachOf(
     ? withinBomberReach(state.map, acting, territory)
     : bordersEachOther(state, acting, territory);
   return open ? "in" : "out";
+}
+
+/**
+ * Whether a squadron still has its flight. A squadron is spent only on the
+ * turn that spent it, and a turn is only ever the current player's: an
+ * opponent's plane grounded on a turn this player never watched is not theirs
+ * to read off the board.
+ */
+function squadronShown(holding: Holding, viewer: PlayerId): SquadronShown {
+  return holding.bombersFlown && holding.owner === viewer ? "spent" : "ready";
 }
 
 function lineShown(holding: Holding, viewer: PlayerId): LineShown {
