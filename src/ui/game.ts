@@ -250,11 +250,10 @@ export function mountGame(host: Element, initial: GameState, dice: Dice): Mounte
         if (selected === tapped) {
           /*
            * A second tap on the chosen territory sends its bombers instead of
-           * its armies. PROVISIONAL: the fortify phase gave this idiom up for
-           * a named control, because a tap that means two things spends a
-           * turn by accident. Here the tap commits nothing yet — the target is
-           * still to be chosen — so it stands until the attack phase is
-           * played enough to say whether it misleads too.
+           * its armies. The fortify phase gave this idiom up for a named
+           * control because a tap there spent the turn; this one commits
+           * nothing on its own, since the target is still to be named, so the
+           * gesture stays where it costs a player nothing to try.
            */
           tryMove(() => {
             const base = holdingOf(state, tapped);

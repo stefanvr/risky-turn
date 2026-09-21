@@ -38,6 +38,11 @@ they are declared. A round needs only a phone and a few minutes of attention.
 - Each continent's coast is drawn in a colour of its own, and pulled inside its
   own ground so that two continents meeting at a neck show both their lines.
   Borders between cells wear one colour everywhere.
+- A tap on the board chooses; it does not spend. The action a phase offers has
+  its own control, named after what pressing it does, and it is offered only
+  where the rules would allow it. Where a second tap on a chosen territory
+  still means something — arming a squadron during an attack — it commits
+  nothing by itself: the tap that commits is the one that names the target.
 - A control that belongs to one phase of a turn hides when its phase ends but
   keeps its place on screen. The map is the same size in the same position for
   the whole turn, so nothing a thumb is already reaching for moves under it.
