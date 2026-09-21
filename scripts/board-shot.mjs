@@ -48,8 +48,10 @@ const page = await browser.newPage({
 
 try {
   await page.goto(url + at.replace(/^\?/, "?"));
-  // The game is mounted from a module, so nothing is on the page until it is.
-  await page.waitForSelector('[data-role="turn"]');
+  // Everything is mounted from a module, so the page is empty until it is.
+  // The door and the board both fill the same element, so this waits for
+  // whichever of them this address asks for.
+  await page.waitForSelector("#game > *");
   for (const selector of taps) await page.click(selector);
   await page.screenshot({ path: out });
   console.log(`wrote ${out} at ${PHONE.width}x${PHONE.height}`);

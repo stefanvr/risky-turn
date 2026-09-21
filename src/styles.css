@@ -512,3 +512,80 @@ body {
 .territory__bombers[data-squadron="spent"] .force__count {
   fill: var(--spent);
 }
+
+/*
+ * The front door. It is the one screen that is not the board, so it borrows
+ * the board's palette and type and adds nothing of its own beyond the size a
+ * thumb needs.
+ *
+ * PROVISIONAL: how the door looks. It is the first screen a player meets and
+ * nothing about its weight, spacing or emphasis has been chosen — it belongs
+ * to the styling session PRODUCT.md already defers the rest of the look to.
+ */
+.door {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 100dvh;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.door__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.door__choice {
+  width: min(20rem, 100%);
+  padding: 1rem;
+  border: 1px solid var(--land);
+  border-radius: 0.75rem;
+  background: var(--land);
+  color: inherit;
+  font: inherit;
+  font-size: 1.125rem;
+}
+
+.door__aside {
+  padding: 0.75rem;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  opacity: 0.75;
+  text-decoration: underline;
+}
+
+/* The code is read aloud, so it is set wide enough to be read off at a glance. */
+.door__code {
+  margin: 0;
+  font-size: 2.5rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.18em;
+}
+
+.door__field {
+  width: min(20rem, 100%);
+  padding: 1rem;
+  border: 1px solid var(--land);
+  border-radius: 0.75rem;
+  background: var(--sea);
+  color: inherit;
+  font: inherit;
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.18em;
+  text-align: center;
+}
+
+.door__status {
+  margin: 0;
+  max-width: 22rem;
+  opacity: 0.85;
+}
+

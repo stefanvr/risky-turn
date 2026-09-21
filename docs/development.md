@@ -123,6 +123,17 @@ something.
 Adding a fixture means adding its name to `fixtureNames()` as well as to the
 switch, because the gate test iterates that list.
 
+## The front door
+
+The plain address now opens the front door — two ways to play — rather than the
+board, because that is what a player meets. `?fixture=` still goes straight to
+the board, which is what the board pictures in the section above rely on.
+
+```sh
+pnpm shot /tmp/door.png
+pnpm shot /tmp/code.png --tap '[data-role="play-online"]'
+```
+
 ## Two seats, two tabs
 
 A match has one authoritative host and one seat per player. Until join codes

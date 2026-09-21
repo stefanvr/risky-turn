@@ -34,6 +34,11 @@ they are declared. A round needs only a phone and a few minutes of attention.
   turns and shows the match as it happens, told only what that player knows.
 - A match can be read back. What has happened during play is available to a
   player while they play, reached the same way the game's numbers are.
+- Opening the game asks which way it is being played before it deals a board:
+  sharing one device, or playing on separate ones. The online way arrives
+  already holding a six-digit code — one player reads it out, the other types
+  it in — and joining is offered beneath that rather than as a second decision
+  every player has to make.
 - A match depends on the player who started it. If they leave, it ends for
   everyone: there is no handing a match on to somebody else and no waiting for
   its owner to come back.
@@ -81,7 +86,9 @@ they are declared. A round needs only a phone and a few minutes of attention.
   one piece: the palette, the six player colours, the six continent coasts and
   the accent that marks a poised strike. Colours settled one at a time do not
   survive being seen together, and six distinguishable player colours sitting on
-  the map is the constraint the whole palette has to meet. All PROVISIONAL in
+  the map is the constraint the whole palette has to meet. The front door's
+  look joins this: it is the first screen a player meets and nothing about its
+  weight, spacing or emphasis has been chosen. All PROVISIONAL in
   src/styles.css.
 - 2026-09-21 — Making gameplay traffic hard to read casually. A match's messages
   stay plain and descriptive rather than compact and opaque. The game sends

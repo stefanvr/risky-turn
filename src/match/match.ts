@@ -78,6 +78,8 @@ export interface MatchOptions {
   readonly state: GameState;
   readonly dice: Dice;
   readonly transport: Transport;
+  /** Called when a seat announces itself, which is how a host knows to begin. */
+  readonly onJoin?: (player: PlayerId) => void;
 }
 
 /**
@@ -85,9 +87,10 @@ export interface MatchOptions {
  * action from a seat whose turn it is not changes nothing, and neither does
  * one the rules refuse.
  */
-export function openMatch({ state, dice, transport }: MatchOptions): Match {
+export function openMatch({ state, dice, transport, onJoin }: MatchOptions): Match {
   let game = state;
   const seats = new Map<PlayerId, Seat>();
+  const greeted = new Set<PlayerId>();
 
   const tell = (outcome?: Outcome, refused?: { player: PlayerId; why: string }): void => {
     // Everyone in the game is told, whether or not their seat is in this
@@ -104,8 +107,12 @@ export function openMatch({ state, dice, transport }: MatchOptions): Match {
 
   transport.onAction((player, action) => {
     if (action.kind === "hello") {
-      // A seat that has just arrived is sent the board before it plays.
+      // A seat that has just arrived is sent the board before it plays. The
+      // hello is repeated until answered, so this may be a seat already known.
+      const known = greeted.has(player);
+      greeted.add(player);
       transport.deliver(player, { view: viewFor(game, player) });
+      if (!known) onJoin?.(player);
       return;
     }
     if (player !== game.currentPlayer) return;
@@ -249,8 +256,16 @@ export function sharedSeat(match: Match, players: readonly PlayerId[]): Seat {
  * The hello is repeated until it is answered, so the two pages may be opened
  * in either order.
  */
-export function joinSeat(transport: Transport, player: PlayerId): Promise<Seat> {
-  return new Promise((resolve) => {
+export class NoSuchRoomError extends Error {
+  override readonly name = "NoSuchRoomError";
+}
+
+export function joinSeat(
+  transport: Transport,
+  player: PlayerId,
+  waitFor = 4000,
+): Promise<Seat> {
+  return new Promise((resolve, reject) => {
     let latest: Update | undefined;
     const listeners: ((update: Update) => void)[] = [];
 
@@ -266,12 +281,17 @@ export function joinSeat(transport: Transport, player: PlayerId): Promise<Seat> 
     };
 
     const knocking = setInterval(() => transport.submit(player, { kind: "hello" }), 300);
+    const givingUp = setTimeout(() => {
+      clearInterval(knocking);
+      reject(new NoSuchRoomError("no game is waiting on that code"));
+    }, waitFor);
 
     transport.onUpdate(player, (update) => {
       const first = latest === undefined;
       latest = update;
       if (first) {
         clearInterval(knocking);
+        clearTimeout(givingUp);
         resolve(seat);
         return;
       }

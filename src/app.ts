@@ -30,13 +30,21 @@ const dice = diceFrom(seededRandom(seed + 1));
  * on the tabs that join it. Until join codes exist, this is how two seats
  * reach one match. docs/development.md has the pair of URLs.
  */
-const parameters = import.meta.env.DEV ? new URLSearchParams(window.location.search) : undefined;
-const seat = parameters?.get("seat") ?? null;
+const parameters = new URLSearchParams(window.location.search);
+const development = import.meta.env.DEV ? parameters : undefined;
+
+/*
+ * `?seat=` opens the page as one player's own screen rather than through the
+ * door, and `?fixture=` puts a staged position on the board without one. Both
+ * are development routes: the constant folds away in a production build and
+ * takes every branch that uses it with it. docs/development.md has the detail.
+ */
+const seat = development?.get("seat") ?? null;
 
 if (seat !== null) {
   const { mountSeat } = await import("./ui/seat");
   const { openMatch, joinSeat } = await import("./match/match");
-  const room = parameters!.get("room");
+  const room = development!.get("room");
 
   if (room === null) {
     const { loopback } = await import("./match/loopback");
@@ -46,11 +54,19 @@ if (seat !== null) {
     const transport = tabTransport(room);
     mountSeat(
       host,
-      parameters!.has("host")
+      development!.has("host")
         ? openMatch({ state, dice, transport }).seat(seat)
         : await joinSeat(transport, seat),
     );
   }
-} else {
+} else if (development?.get("fixture") != null) {
   mountGame(host, state, dice);
+} else {
+  const { mountFrontDoor } = await import("./ui/frontDoor");
+  mountFrontDoor(host, {
+    state,
+    players: ["Red", "Blue"],
+    dice,
+    random: seededRandom(seed + 2),
+  });
 }
