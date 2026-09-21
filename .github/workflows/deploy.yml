@@ -31,8 +31,14 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # The gate drives two real browser tabs, so the browser has to be here.
+      # The gate drives real browsers, so the browser has to be here.
       - run: pnpm exec playwright install --with-deps chromium
+
+      # And it runs against the Firebase emulators, which are a Java program.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
 
       # The same check that gates a goal locally gates a deployment here:
       # a build that fails typecheck or tests never reaches the public URL.

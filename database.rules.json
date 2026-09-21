@@ -1,0 +1,33 @@
+{
+  "rules": {
+    "rooms": {
+      "$code": {
+        ".read": "auth != null && (data.child('host/uid').val() === auth.uid || data.child('guest/uid').val() === auth.uid)",
+
+        "host": {
+          ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid"
+        },
+
+        "guest": {
+          ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid && root.child('rooms').child($code).child('host').exists()"
+        },
+
+        "offer": {
+          ".write": "auth != null && root.child('rooms').child($code).child('host/uid').val() === auth.uid"
+        },
+
+        "answer": {
+          ".write": "auth != null && root.child('rooms').child($code).child('guest/uid').val() === auth.uid"
+        },
+
+        "ice": {
+          "$side": {
+            ".write": "auth != null && root.child('rooms').child($code).child($side).child('uid').val() === auth.uid"
+          }
+        },
+
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

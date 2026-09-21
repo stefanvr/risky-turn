@@ -47,6 +47,7 @@ named here is the one that holds.
 | what one player may be told about the board | `src/domain/view.ts` |
 | how a match is hosted, and what a seat may ask for | `src/match/match.ts` |
 | how two tabs reach one match | `docs/development.md` |
+| how two browsers are introduced, and what a room may hold | `src/net/rooms.ts`, `database.rules.json` |
 | how many armies a turn grants | `src/domain/reinforcements.ts` |
 | how a battle is decided | `src/domain/combat.ts` |
 | what a cell shows, what the turn bar says, what the legend lists | `src/ui/presentation.ts` |

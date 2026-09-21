@@ -589,3 +589,16 @@ body {
   opacity: 0.85;
 }
 
+
+/* The link above a networked board: a dropped connection is not something to discover by tapping. */
+.board__link {
+  margin: 0;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+  opacity: 0.7;
+}
+
+.board__link[data-link="lost"] {
+  color: var(--accent);
+  opacity: 1;
+}

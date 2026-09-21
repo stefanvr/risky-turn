@@ -70,45 +70,4 @@ describe("two tabs on one match", () => {
     expect(await lineOn(hosting, "calder")).toBe("none");
   }, 60_000);
 
-  it("lets two tabs reach one match through the screens", async () => {
-    const context = browser.contexts()[0]!;
-    const hosting = await context.newPage();
-    const joining = await context.newPage();
-    try {
-      await hosting.goto(url);
-      await hosting.click('[data-role="play-online"]');
-      const code = ((await hosting.textContent('[data-role="join-code"]')) ?? "").replace(
-        /\s/g,
-        "",
-      );
-      expect(code).toMatch(/^\d{6}$/);
-
-      await joining.goto(url);
-      await joining.click('[data-role="play-online"]');
-      await joining.click('[data-role="join-instead"]');
-      await joining.fill('[data-role="code-field"]', code);
-      await joining.click('[data-role="join"]');
-
-      // Both are on the board now, because the second player arrived.
-      await hosting.waitForSelector('[data-role="turn"]', { timeout: 10_000 });
-      await joining.waitForSelector('[data-role="turn"]', { timeout: 10_000 });
-
-      // A dealt game opens in deploy with armies still in hand, so the move to
-      // make is placing one. How many depends on the deal, so it is read from
-      // the joining tab rather than assumed, and then watched to fall by one.
-      const inHand = Number(
-        /(\d+) to place/.exec((await joining.textContent('[data-role="turn"]')) ?? "")?.[1],
-      );
-      expect(inHand).toBeGreaterThan(0);
-
-      await hosting.locator('[data-territory][data-player="1"]').first().click();
-
-      await expect
-        .poll(() => joining.textContent('[data-role="turn"]'), { timeout: 10_000 })
-        .toContain(`${inHand - 1} to place`);
-    } finally {
-      await hosting.close();
-      await joining.close();
-    }
-  }, 90_000);
 });

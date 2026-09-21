@@ -20,6 +20,12 @@ function openTheDoor(): void {
     dice: seededDice(7),
     random: seededRandom(7),
     waitFor: 50,
+    online: {
+      // The screens are what is under test here; reaching another browser is
+      // checked across two real ones in src/dev/online.test.ts.
+      host: () => new Promise(() => undefined),
+      join: () => Promise.reject(new Error("no game is waiting on that code")),
+    },
   });
 }
 

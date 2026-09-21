@@ -180,3 +180,48 @@ Playwright downloads:
 pnpm exec playwright install chromium
 ```
 
+## Playing across two browsers
+
+Online play needs the Firebase project: a room to be introduced in, and a
+peer connection to play over. Against the emulators, which need no account and
+reach nothing real:
+
+```sh
+pnpm dev:online
+```
+
+Open the address it prints in two different browsers — or one browser and one
+private window, which is enough to keep them apart. Tap *Play online* in the
+first, then *Play online → Join a game instead* in the second and type the six
+digits. Both land on the board with a line above it saying the connection is
+up.
+
+Against the live project, `pnpm dev` does the same thing without the emulators.
+That needs `databaseURL` in `src/net/firebase.ts` to be the real instance's
+URL, which carries its region.
+
+### What the room holds, and for how long
+
+A room holds who the two players are, the offer and answer that open the peer
+connection, and the candidates that route it. It is deleted as soon as the
+channel is open. No move ever passes through it, which is why the check asserts
+that the database is asked for nothing once play begins.
+
+`database.rules.json` is the boundary between one match and another: a
+six-digit code is short enough to guess, so what a guess reaches has to be
+nothing. `src/dev/rules.test.ts` checks that against the emulator, because
+rules cannot be checked by reading them.
+
+### The checks
+
+`pnpm test` runs the whole suite inside `firebase emulators:exec`, so the
+emulators are up for the tests that need them. `src/dev/online.test.ts` drives
+two **separate browser contexts**, so no same-origin shortcut can carry the
+game between them: what is left is the room and the peer connection.
+
+Both need the Chromium download and a JDK:
+
+```sh
+pnpm exec playwright install chromium
+```
+

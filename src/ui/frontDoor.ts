@@ -1,10 +1,33 @@
 import { mountGame } from "./game";
 import { mountSeat } from "./seat";
 import { joinSeat, openMatch } from "../match/match";
-import { tabTransport } from "../match/tabs";
+import { connect } from "../net/firebase";
+import { enterRoom, openRoom } from "../net/rooms";
+import { link } from "../net/peer";
+import type { Link, LinkState } from "../net/peer";
 import type { Dice } from "../domain/dice";
 import type { GameState, PlayerId } from "../domain/game";
 import type { Random } from "../domain/random";
+import type { GameMap } from "../domain/map";
+
+/**
+ * How the online way reaches another browser. It is an option so that the
+ * screens can be checked without a connection, and so that what carries a
+ * match can be replaced without the door knowing.
+ */
+export interface OnlinePlay {
+  host(code: string, map: GameMap): Promise<Link>;
+  join(code: string, map: GameMap): Promise<Link>;
+}
+
+export const overTheInternet: OnlinePlay = {
+  async host(code, map) {
+    return link(await openRoom(await connect(`host-${code}`), code), map);
+  },
+  async join(code, map) {
+    return link(await enterRoom(await connect(`guest-${code}`), code), map);
+  },
+};
 
 export interface FrontDoorOptions {
   readonly state: GameState;
@@ -13,6 +36,7 @@ export interface FrontDoorOptions {
   readonly random: Random;
   /** How long a joining seat knocks before it decides nobody is there. */
   readonly waitFor?: number;
+  readonly online?: OnlinePlay;
 }
 
 /** Six digits: the shape everyone has typed before, on the keypad a thumb hits. */
@@ -35,6 +59,7 @@ export function codeFrom(random: Random): string {
  * second decision everyone has to make.
  */
 export function mountFrontDoor(host: Element, options: FrontDoorOptions): void {
+  const online = options.online ?? overTheInternet;
   const players = options.players;
   const hostPlayer = players[0]!;
   const guestPlayer = players[1] ?? hostPlayer;
@@ -84,6 +109,25 @@ export function mountFrontDoor(host: Element, options: FrontDoorOptions): void {
     mount(host);
   };
 
+  /**
+   * The board, with a line above it saying whether the other player is still
+   * there. A dropped connection is not something to discover by tapping.
+   */
+  const boardOnALink = (
+    mount: (into: Element) => void,
+    watch: (listener: (state: LinkState) => void) => void,
+  ): void => {
+    host.innerHTML = "";
+    const line = says("link-state", "Connected.");
+    line.className = "board__link";
+    host.append(line);
+    watch((state) => {
+      line.textContent = state === "connected" ? "Connected." : "Connection lost.";
+      line.setAttribute("data-link", state);
+    });
+    mount(host);
+  };
+
   const chooseAWay = (): void =>
     show((screen) => {
       screen.append(
@@ -99,16 +143,6 @@ export function mountFrontDoor(host: Element, options: FrontDoorOptions): void {
 
   function waitOnACode(): void {
     const code = codeFrom(options.random);
-    const transport = tabTransport(code);
-    const match = openMatch({
-      state: options.state,
-      dice: options.dice,
-      transport,
-      onJoin: () =>
-        board((into) => {
-          mountSeat(into, match.seat(hostPlayer));
-        }),
-    });
 
     show((screen) => {
       const shown = document.createElement("p");
@@ -122,6 +156,23 @@ export function mountFrontDoor(host: Element, options: FrontDoorOptions): void {
         says("door-status", "Read it to the other player. Waiting for them to join."),
         quiet("join-instead", "Join a game instead", typeACode),
       );
+    });
+
+    void (async () => {
+      const joined = await online.host(code, options.state.map);
+      const match = openMatch({
+        state: options.state,
+        dice: options.dice,
+        transport: joined.transport,
+        onJoin: () =>
+          boardOnALink(
+            (into) => mountSeat(into, match.seat(hostPlayer)),
+            joined.onStateChange,
+          ),
+      });
+    })().catch(() => {
+      const status = host.querySelector('[data-role="door-status"]');
+      if (status) status.textContent = "Could not reach the game service. Try again.";
     });
   }
 
@@ -141,16 +192,15 @@ export function mountFrontDoor(host: Element, options: FrontDoorOptions): void {
         title("Their code"),
         field,
         button("join", "Join", () => {
-          status.textContent = "Looking for that game…";
-          joinSeat(tabTransport(field.value.trim()), guestPlayer, options.waitFor)
-            .then((seat) =>
-              board((into) => {
-                mountSeat(into, seat);
-              }),
-            )
-            .catch(() => {
-              status.textContent = "No game is waiting on that code. Check it and try again.";
-            });
+          const code = field.value.trim();
+          status.textContent = "Looking for that game\u2026";
+          void (async () => {
+            const joined = await online.join(code, options.state.map);
+            const seat = await joinSeat(joined.transport, guestPlayer, options.waitFor);
+            boardOnALink((into) => mountSeat(into, seat), joined.onStateChange);
+          })().catch(() => {
+            status.textContent = "No game is waiting on that code. Check it and try again.";
+          });
         }),
         status,
         quiet("start-instead", "Start a game instead", waitOnACode),
