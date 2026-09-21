@@ -6,10 +6,19 @@ and inspect the thing lives in `docs/development.md`.
 
 ## Shape
 
-A static site. There is no server, no account, no database and nothing that
-survives a reload: a player opens a URL and the whole game is in the page. This
-is what makes the product's "nothing to install, no one to wait for" true, and
-it is the constraint every other choice here answers to.
+A static site. The whole game is in the page: a player opens a URL and plays,
+no account is made, no game is stored, and nothing of a game survives a reload.
+This is what makes "nothing to install, no account to make" true, and it is the
+constraint every other choice here answers to.
+
+A match between players on their own devices needs two things a page cannot
+supply by itself: somewhere to agree a room, and somewhere to exchange the
+details of a connection. Firebase supplies both and nothing else — identity,
+rooms, join codes and WebRTC signalling. Gameplay runs between browsers over
+WebRTC DataChannels, direct where ICE and STUN can establish it and through a
+TURN relay where they cannot. Firebase is never in the gameplay path, and no
+backend credential, service account or administrative TURN credential is
+present in browser code.
 
 Published to GitHub Pages at `https://stefanvr.github.io/risky-turn/` on every
 push to `main`. The asset base and the workflow are the authority for the URL —
@@ -21,6 +30,25 @@ push to `main`. The asset base and the workflow are the authority for the URL �
 TypeScript, Vite, Vitest, pnpm. No UI framework: the DOM and the SVG board are
 built directly, because the board is one drawing and a framework's reconciler
 would earn nothing against it.
+
+## One host, and seats that know only their own player
+
+A match has one authoritative host and one seat per player. The host owns the
+game state and is the only thing that applies a move: a seat sends an action,
+the host validates it and applies it, and the seat is sent back what its player
+may know. A seat decides nothing.
+
+Hot-seat is a match with one seat. The rules, the redaction and the handover
+therefore have one implementation and cannot disagree about a game played two
+ways.
+
+Secrecy is enforced where the state is sent, not where the board is drawn
+(`src/domain/view.ts`). A seat is never given what its player may not know,
+because anything delivered to a browser must be assumed readable by whoever
+holds it — and a defensive line is secret by rule, not by obscurity.
+
+The transport is an interface. A loopback transport runs a whole match in one
+process, which is how authority and secrecy are checked without a network.
 
 ## The domain owns the rules, and knows nothing else
 

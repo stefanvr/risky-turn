@@ -10,8 +10,8 @@ they are declared. A round needs only a phone and a few minutes of attention.
 ## Decided
 - It is played on a phone held in one hand. Touch is the only input, and a thumb
   has to be able to reach and hit everything the game asks for.
-- A player opens a link and plays. There is nothing to install, no account to
-  make, and nobody to wait for.
+- A player opens a link and plays. There is nothing to install and no account to
+  make.
 - Risky Turn is a game of the Risk genre shaped for a phone, not a port of Risk.
   Its skeleton is Risk's — territories, continents, dice combat, victory by
   conquest — and any rule that fights a short hot-seat session on a small screen
@@ -24,10 +24,16 @@ they are declared. A round needs only a phone and a few minutes of attention.
   portrait so an upright phone shows the whole board at once. Continents meet
   only at narrow necks, and the water between them is crossed by named sea links
   that only bombers use.
-- Players share one device and take turns in sequence. There is no computer
-  opponent and no network play: the game is passed from hand to hand. Because
-  some of what a player knows is secret, ending a turn covers the board until
-  the next player takes it up.
+- There are two ways to play, chosen when the game is opened: players share one
+  device and pass it from hand to hand, or each player plays on their own device
+  in a match they join by a code. There is no computer opponent either way.
+- Some of what a player knows is secret, and a player is never shown what they
+  may not know. On a shared device that means the board is covered between
+  turns, because the next player is about to hold it. On a player's own device
+  there is nobody to hide it from, so the board stays up through everyone's
+  turns and shows the match as it happens, told only what that player knows.
+- A match can be read back. What has happened during play is available to a
+  player while they play, reached the same way the game's numbers are.
 - The screen states at all times whose turn it is, in that player's own colour,
   and what the turn still owes. What just happened is reported separately and
   never displaces it: on a shared phone, the standing question and the last
@@ -74,3 +80,9 @@ they are declared. A round needs only a phone and a few minutes of attention.
   survive being seen together, and six distinguishable player colours sitting on
   the map is the constraint the whole palette has to meet. All PROVISIONAL in
   src/styles.css.
+- 2026-09-21 — Making gameplay traffic hard to read casually. A match's messages
+  stay plain and descriptive rather than compact and opaque. The game sends
+  roughly one message per player action, so a compact encoding saves nothing
+  worth an encoder, a decoder and a schema to keep in step, and the obscurity it
+  would buy is no defence against anyone determined. Revisit only if a message
+  ever becomes frequent.

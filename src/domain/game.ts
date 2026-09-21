@@ -9,8 +9,9 @@ export const PHASE_ORDER: readonly Phase[] = ["deploy", "attack", "fortify"];
 
 /**
  * A territory dug in. A line is declared long before it protects: the count is
- * how many of the holder's own turns must still end before it holds, so
- * opponents can see a line being built and have a round in which to break it.
+ * how many of the holder's own turns must still end before it holds. The line
+ * is secret until an attack runs into it, so the wait is a bet placed early
+ * rather than a warning given: see docs/rules.md.
  */
 export interface DefensiveLine {
   readonly turnsUntilHolding: number;
