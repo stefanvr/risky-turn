@@ -1,4 +1,4 @@
 @/home/stefanraaphorst/svr/factory/engine/ENGINE.md
 
 Use technical english.
-Product intent and settled decisions: PRODUCT.md
+Start at README.md: it says where every other truth lives.

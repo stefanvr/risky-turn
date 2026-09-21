@@ -8,54 +8,39 @@ taking ground, and defensive lines, which harden a territory a full round after
 they are declared. A round needs only a phone and a few minutes of attention.
 
 ## Decided
-- Delivery is a web application, playable on a mobile device. Touch input and a
-  phone-sized viewport are the primary target, not an afterthought.
-- The game is played on one fixed, hand-authored world map in the classic style:
-  territories grouped into continents that grant a reinforcement bonus to a
-  player holding all of them. Maps are not generated, and there is no map
-  selection.
-- The game is published as a static site to GitHub Pages at
-  https://stefanvr.github.io/risky-turn/ on every push to main. There is no
-  server and no account: a player opens a URL. A build that fails the check is
-  never published.
-- Risky Turn is a game of the Risk genre shaped for a phone, not a port of
-  Risk. Its skeleton is Risk's — territories, continents, dice combat, victory
-  by conquest — and any rule that fights a short hot-seat session on a small
-  screen is changed deliberately and recorded rather than inherited.
-- The world is thirty territories in six continents, an invented world with
-  names of its own rather than Earth, laid out portrait so an upright phone
-  shows the whole board at once. Continents meet only at narrow necks, and the
-  water between them is crossed by named sea links that only bombers use.
-- The screen states at all times whose turn it is, in that player's own
-  colour, and what the turn still owes. What just happened is reported
-  separately and never displaces it: on a shared phone, the standing question
-  and the last event are two different things and need two places.
-- The game's numbers are reachable from the board. A legend states what a turn
-  earns, what each continent pays and what each unit costs, and it is built
-  from the rules themselves rather than written out a second time.
-- Each continent's coast is drawn in a colour of its own, and pulled inside its
-  own ground so that two continents meeting at a neck show both their lines.
-  Borders between cells wear one colour everywhere.
+- It is played on a phone held in one hand. Touch is the only input, and a thumb
+  has to be able to reach and hit everything the game asks for.
+- A player opens a link and plays. There is nothing to install, no account to
+  make, and nobody to wait for.
+- Risky Turn is a game of the Risk genre shaped for a phone, not a port of Risk.
+  Its skeleton is Risk's — territories, continents, dice combat, victory by
+  conquest — and any rule that fights a short hot-seat session on a small screen
+  is changed deliberately and recorded rather than inherited.
+- The game is played on one fixed, hand-authored world in the classic style:
+  territories grouped into continents that pay a reinforcement bonus to a player
+  holding one outright. Worlds are not generated, and there is no world to
+  choose.
+- The world is invented, with names of its own rather than Earth's, and laid out
+  portrait so an upright phone shows the whole board at once. Continents meet
+  only at narrow necks, and the water between them is crossed by named sea links
+  that only bombers use.
 - Players share one device and take turns in sequence. There is no computer
   opponent and no network play: the game is passed from hand to hand. Because
   some of what a player knows is secret, ending a turn covers the board until
   the next player takes it up.
+- The screen states at all times whose turn it is, in that player's own colour,
+  and what the turn still owes. What just happened is reported separately and
+  never displaces it: on a shared phone, the standing question and the last
+  event are two different things and need two places.
+- The game's numbers are reachable from the board. A legend states what a turn
+  earns, what each continent pays and what each unit costs, so a player never
+  has to know a rule from outside the game to play it.
+- Each continent's coast is drawn in a colour of its own, and pulled inside its
+  own ground so that two continents meeting at a neck show both their lines.
+  Borders between cells wear one colour everywhere.
 - A control that belongs to one phase of a turn hides when its phase ends but
   keeps its place on screen. The map is the same size in the same position for
   the whole turn, so nothing a thumb is already reaching for moves under it.
-
-## Where decided truth lives
-- which of Risk's rules are kept, changed or dropped -> docs/rules.md
-- how to run it, picture it, reproduce a game, and reach fixtures -> docs/development.md
-- what a map must satisfy to be playable -> src/domain/map.ts
-- the board the game is played on -> src/maps/world.ts
-- what the board says about a continent -> src/render/coast.ts
-- the rules of a turn, and what makes a move illegal -> src/domain/turn.ts
-- how many armies a turn grants -> src/domain/reinforcements.ts
-- how a battle is decided -> src/domain/combat.ts
-- published URL and asset base -> vite.config.ts, .github/workflows/deploy.yml
-- what a cell shows, what the turn bar says, and what the legend lists -> src/ui/presentation.ts
-- palette and type tokens -> src/styles.css
 
 ## Deferred
 - 2026-09-20 — The palette is not settled. It stays PROVISIONAL in
