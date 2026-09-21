@@ -2,3 +2,8 @@
 GOAL.md
 node_modules/
 dist/
+
+# emulator output
+database-debug.log
+firebase-debug.log
+ui-debug.log
