@@ -36,10 +36,21 @@ export interface Holding {
 export const BOMBER_COST = 3;
 export const BOMBS_KILL_FROM = 5;
 
-/** Armies a territory must keep standing for a line to be declared or to hold. */
+/*
+ * Armies a territory must keep standing for a line to be declared or to hold.
+ * PROVISIONAL: five is high enough that a line is a real commitment of force
+ * and low enough to reach early, which decides whether anyone ever builds a
+ * second one. docs/rules.md has called this open since lines were added.
+ */
 export const LINE_MINIMUM_GARRISON = 5;
 
-/** Turns of the declaring player's own that must end before a line protects. */
+/*
+ * Turns of the declaring player's own that must end before a line protects.
+ * PROVISIONAL: two means a line protects from the end of the declaring
+ * player's next turn, so entrenching is a bet placed a round early rather than
+ * a reaction to an attack already coming. One turn makes it a reaction; three
+ * makes it a fortress nobody has time to build.
+ */
 export const TURNS_TO_HARDEN = 2;
 
 export function lineIsHolding(holding: Holding): boolean {
