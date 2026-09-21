@@ -10,7 +10,7 @@ was made up on the spot for the same reason. Neither has been argued for.
 |---|---|---|
 | Territories dealt out at random, as evenly as they divide | `src/domain/setup.ts` | invented — Risk has players claim territories in turn |
 | One army on each held territory, the rest spread round-robin | `src/domain/setup.ts` | invented |
-| Opening armies = twice the largest territory share | `src/domain/setup.ts` | invented, PROVISIONAL |
+| Opening armies = twice the largest territory share | `src/domain/setup.ts` | invented |
 | Turn order is the order players were listed | `src/domain/setup.ts` | invented — Risk rolls for it |
 | Reinforcements = max(3, territories ÷ 3) | `src/domain/reinforcements.ts` | inherited |
 | Continent bonus for holding a continent outright | `src/domain/reinforcements.ts` | inherited |
@@ -20,10 +20,10 @@ was made up on the spot for the same reason. Neither has been argued for.
 | Six-sided dice | `src/domain/dice.ts` | inherited |
 | One call resolves one exchange; pressing an attack is repeated | `src/domain/turn.ts` | **decided** — the tension of each roll is the point, and is worth the taps |
 | Attack needs: own source, enemy target, shared border, 2+ armies | `src/domain/turn.ts` | inherited |
-| On conquest the attacker advances with all but one army | `src/domain/turn.ts` | **deviation**, deferred |
+| On conquest the attacker advances with all but one army | `src/domain/turn.ts` | **deviation** |
 | One fortify per turn | `src/domain/turn.ts` | inherited |
 | Fortify travels any path through the player's own territory | `src/domain/turn.ts` | inherited (one of Risk's own variants) — rewards a connected empire, which pairs with continent bonuses |
-| A fortify moves all but one army | `src/ui/game.ts` | **deviation**, PROVISIONAL |
+| A fortify moves all but one army | `src/ui/game.ts` | **deviation** |
 | Ending a turn covers the board until the next player takes it up | `src/ui/game.ts` | **decided** — secret lines need a handover on a shared device |
 | Turn runs deploy, then attack, then fortify | `src/domain/game.ts` | inherited |
 | Every reinforcement must be placed before the phase ends | `src/domain/turn.ts` | inherited |
@@ -51,19 +51,6 @@ changed deliberately and the change is recorded here.
 Tapping is the exception already argued: one tap-pair resolves one dice
 exchange, and pressing an attack home costs many taps. That cost is accepted,
 because the decision to roll again is the tension the genre runs on.
-
-## Deliberately deferred
-
-**Escalation.** Nothing currently forces a game to end: income is near flat and
-the defender takes ties, so a dug-in position is cheap to hold and expensive to
-take. Deferred on 2026-09-20 in favour of bombers and defensive lines, which
-change the same arithmetic from the other side — one makes stacks reachable
-without taking ground, the other makes them worth building. Revisit once both
-exist and a full game has been played.
-
-**The opening.** Territories are dealt at random and opening armies are spread
-automatically, so the first decision a player makes is several turns in.
-Deferred on 2026-09-20 for the same reason.
 
 ## Rules of Risky Turn's own
 
@@ -138,7 +125,3 @@ open up half a map.
 
 Reach is deliberately not a general pathfinder. It is two steps of breadth over
 borders, plus a direct sea link, and nothing else.
-
-Open numbers, all PROVISIONAL until a full game has been played: what a bomber
-costs in reinforcements, whether reach is two borders, whether 5 and 6 are the
-faces that kill, and whether five armies is the right threshold for a line.

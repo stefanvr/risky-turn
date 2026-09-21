@@ -43,6 +43,15 @@ they are declared. A round needs only a phone and a few minutes of attention.
   the whole turn, so nothing a thumb is already reaching for moves under it.
 
 ## Deferred
+- 2026-09-20 — Escalation. Nothing currently forces a game to end: income is
+  near flat and the defender takes ties, so a dug-in position is cheap to hold
+  and expensive to take. Deferred in favour of bombers and defensive lines,
+  which change the same arithmetic from the other side — one makes stacks
+  reachable without taking ground, the other makes them worth building.
+  Revisit once a full game has been played.
+- 2026-09-20 — The opening. Territories are dealt at random and opening armies
+  are spread automatically, so the first decision a player makes is several
+  turns into the game. Deferred for the same reason.
 - 2026-09-20 — The palette is not settled. It stays PROVISIONAL in
   src/styles.css until players have colours, because six distinguishable player
   colours sitting on the map is the constraint the palette actually has to
