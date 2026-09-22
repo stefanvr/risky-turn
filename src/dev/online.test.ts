@@ -22,6 +22,8 @@ describe("two browsers on one game", () => {
   let joining: { context: BrowserContext; page: Page };
   const databaseFrames: string[] = [];
   let watchingFrames = false;
+  /** What each page complained about, so a failure here is not mute. */
+  const complaints = new Map<Page, string[]>();
 
   const openOne = async (): Promise<{ context: BrowserContext; page: Page }> => {
     const context = await browser.newContext();
@@ -39,6 +41,12 @@ describe("two browsers on one game", () => {
       });
     });
     const page = await context.newPage();
+    const noise: string[] = [];
+    complaints.set(page, noise);
+    page.on("console", (message) => {
+      if (message.type() === "error" || message.type() === "warning") noise.push(message.text());
+    });
+    page.on("pageerror", (error) => noise.push(`threw: ${error.message}`));
     // Realtime Database talks over a WebSocket, so the traffic is frames on a
     // socket, not requests. Counting requests would prove nothing either way.
     page.on("websocket", (socket) => {
@@ -56,6 +64,38 @@ describe("two browsers on one game", () => {
   };
 
   const turn = (page: Page): Promise<string | null> => page.textContent('[data-role="turn"]');
+
+  /**
+   * Everything the screen is saying at once.
+   *
+   * A connection that never arrives is asserted on here rather than on the
+   * link alone, so the failure carries the door's own words and whatever the
+   * page complained about. Waiting thirty seconds to be told only that a
+   * string did not match is how an afternoon goes.
+   */
+  const waitUntilConnected = async (page: Page): Promise<void> => {
+    const deadline = Date.now() + 30_000;
+    let said = "";
+    while (Date.now() < deadline) {
+      said = await screenSays(page);
+      if (/link: Connected/i.test(said)) return;
+    }
+    throw new Error(`the screen never said it was connected — ${said}`);
+  };
+
+  const screenSays = async (page: Page): Promise<string> => {
+    // A short wait, because this asks about lines that may have been replaced
+    // already: the default would wait thirty seconds for each absent one and
+    // the poll around it would never come round again.
+    const text = async (role: string): Promise<string> =>
+      (await page.textContent(`[data-role="${role}"]`, { timeout: 250 }).catch(() => null)) ?? "—";
+    const said = complaints.get(page) ?? [];
+    return [
+      `link: ${await text("link-state")}`,
+      `door: ${await text("door-status")}`,
+      `said: ${said.length === 0 ? "nothing" : said.join(" / ")}`,
+    ].join("  ·  ");
+  };
 
   beforeAll(async () => {
     process.env["VITE_FIREBASE_EMULATOR"] = "1";
@@ -88,9 +128,7 @@ describe("two browsers on one game", () => {
     // The screen says so, because a player waiting on a connection has to be
     // told whether it happened.
     for (const page of [hosting.page, joining.page]) {
-      await expect
-        .poll(() => page.textContent('[data-role="link-state"]'), { timeout: 30_000 })
-        .toMatch(/connected/i);
+      await waitUntilConnected(page);
       await page.waitForSelector('[data-role="turn"]', { timeout: 30_000 });
     }
   }, 120_000);
