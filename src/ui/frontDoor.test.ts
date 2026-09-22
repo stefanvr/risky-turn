@@ -4,6 +4,9 @@ import { seededRandom } from "../domain/random";
 import { worldMap } from "../maps/world";
 import { newGame } from "../domain/setup";
 import { seededDice } from "../domain/dice";
+import { loopback } from "../match/loopback";
+import type { OnlinePlay } from "./frontDoor";
+import type { Link } from "../net/relay";
 
 let host: HTMLElement;
 
@@ -13,7 +16,7 @@ beforeEach(() => {
   document.body.append(host);
 });
 
-function openTheDoor(): void {
+function openTheDoor(online?: Partial<OnlinePlay>): void {
   mountFrontDoor(host, {
     state: newGame(worldMap, ["Red", "Blue"], seededRandom(7)),
     players: ["Red", "Blue"],
@@ -25,9 +28,24 @@ function openTheDoor(): void {
       // checked across two real ones in src/dev/online.test.ts.
       host: () => new Promise(() => undefined),
       join: () => Promise.reject(new Error("no game is waiting on that code")),
+      ...online,
     },
   });
 }
+
+/** A room that answers at once, carrying nothing. */
+const aRoomThatAnswers = (): Promise<Link> =>
+  Promise.resolve({
+    transport: loopback(),
+    state: () => "connected" as const,
+    onStateChange: () => undefined,
+  });
+
+const field = (): HTMLInputElement => {
+  const found = host.querySelector<HTMLInputElement>('[data-role="code-field"]');
+  if (!found) throw new Error("no field to type a code into");
+  return found;
+};
 
 const control = (role: string): HTMLButtonElement | null =>
   host.querySelector<HTMLButtonElement>(`[data-role="${role}"]`);
@@ -57,15 +75,51 @@ describe("the front door", () => {
     expect(control("play-online")).toBeNull();
   });
 
-  it("makes a six-digit code and waits on it", () => {
+  it("shows no code until there is a room that answers to it", () => {
     openTheDoor();
     tap("play-online");
 
-    const code = host.querySelector('[data-role="join-code"]')?.textContent ?? "";
-    expect(code.replace(/\s/g, "")).toMatch(/^\d{6}$/);
+    // Six digits on screen are a promise that they can be joined. Until the
+    // room exists, the promise would be false — and a player would read it
+    // out and be told there is no such game.
+    expect(host.querySelector('[data-role="join-code"]')).toBeNull();
+    expect(host.querySelector('[data-role="door-status"]')?.textContent).toMatch(/getting|ready/i);
+  });
+
+  it("shows the six digits once the room answers, and waits on it", async () => {
+    openTheDoor({ host: aRoomThatAnswers });
+    tap("play-online");
+
+    await vi.waitFor(() => {
+      const code = host.querySelector('[data-role="join-code"]')?.textContent ?? "";
+      expect(code.replace(/\s/g, "")).toMatch(/^\d{6}$/);
+    });
     expect(host.querySelector('[data-role="door-status"]')?.textContent).toMatch(/waiting/i);
     // The board is not dealt to a host with nobody to play.
     expect(host.querySelector('[data-role="turn"]')).toBeNull();
+  });
+
+  it("puts the cursor in the field, so the code can just be typed", () => {
+    openTheDoor();
+    tap("play-online");
+    tap("join-instead");
+
+    expect(document.activeElement).toBe(field());
+  });
+
+  it("joins on Enter, as though the button had been pressed", async () => {
+    openTheDoor();
+    tap("play-online");
+    tap("join-instead");
+
+    field().value = "000000";
+    field().dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+
+    await vi.waitFor(() => {
+      expect(host.querySelector('[data-role="door-status"]')?.textContent).toMatch(
+        /no game|not found|nobody/i,
+      );
+    });
   });
 
   it("refuses a code no room answers, and says so", async () => {
@@ -73,9 +127,7 @@ describe("the front door", () => {
     tap("play-online");
     tap("join-instead");
 
-    const field = host.querySelector<HTMLInputElement>('[data-role="code-field"]');
-    if (!field) throw new Error("no field to type a code into");
-    field.value = "000000";
+    field().value = "000000";
     tap("join");
 
     await vi.waitFor(() => {

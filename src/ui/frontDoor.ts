@@ -141,25 +141,39 @@ export function mountFrontDoor(host: Element, options: FrontDoorOptions): void {
       );
     });
 
+  /**
+   * The code is shown when it can be joined, and not before.
+   *
+   * Six digits on screen are a promise to the other player: type this and you
+   * are in. Claiming the room takes a moment, and a code read out before that
+   * is a code that answers "no game is waiting" — so the screen says it is
+   * getting one ready, and shows the digits when they are true.
+   */
   function waitOnACode(): void {
     const code = codeFrom(options.random);
+    let status: HTMLElement | undefined;
 
     show((screen) => {
-      const shown = document.createElement("p");
-      shown.className = "door__code";
-      shown.setAttribute("data-role", "join-code");
-      shown.textContent = code;
-
+      status = says("door-status", "Getting a game ready\u2026");
       screen.append(
         title("Your code"),
-        shown,
-        says("door-status", "Read it to the other player. Waiting for them to join."),
+        status,
         quiet("join-instead", "Join a game instead", typeACode),
       );
     });
 
+    const showTheCode = (): void => {
+      const shown = document.createElement("p");
+      shown.className = "door__code";
+      shown.setAttribute("data-role", "join-code");
+      shown.textContent = code;
+      status?.before(shown);
+      if (status) status.textContent = "Read it to the other player. Waiting for them to join.";
+    };
+
     void (async () => {
       const joined = await online.host(code, options.state.map);
+      showTheCode();
       const match = openMatch({
         state: options.state,
         dice: options.dice,
@@ -177,8 +191,8 @@ export function mountFrontDoor(host: Element, options: FrontDoorOptions): void {
   }
 
   function typeACode(): void {
+    const field = document.createElement("input");
     show((screen) => {
-      const field = document.createElement("input");
       field.className = "door__field";
       field.setAttribute("data-role", "code-field");
       field.inputMode = "numeric";
@@ -188,24 +202,37 @@ export function mountFrontDoor(host: Element, options: FrontDoorOptions): void {
 
       const status = says("door-status", "Type the code the other player gives you.");
 
+      const tryTheCode = (): void => {
+        const code = field.value.trim();
+        status.textContent = "Looking for that game\u2026";
+        void (async () => {
+          const joined = await online.join(code, options.state.map);
+          const seat = await joinSeat(joined.transport, guestPlayer, options.waitFor);
+          boardOnALink((into) => mountSeat(into, seat), joined.onStateChange);
+        })().catch(() => {
+          status.textContent = "No game is waiting on that code. Check it and try again.";
+        });
+      };
+
+      // A keypad is already up and the code is already being read out: the
+      // digits should land in the field without a tap to put them there, and
+      // the key that ends typing anywhere else should end it here too.
+      field.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") tryTheCode();
+      });
+
       screen.append(
         title("Their code"),
         field,
-        button("join", "Join", () => {
-          const code = field.value.trim();
-          status.textContent = "Looking for that game\u2026";
-          void (async () => {
-            const joined = await online.join(code, options.state.map);
-            const seat = await joinSeat(joined.transport, guestPlayer, options.waitFor);
-            boardOnALink((into) => mountSeat(into, seat), joined.onStateChange);
-          })().catch(() => {
-            status.textContent = "No game is waiting on that code. Check it and try again.";
-          });
-        }),
+        button("join", "Join", tryTheCode),
         status,
         quiet("start-instead", "Start a game instead", waitOnACode),
       );
     });
+    // After the screen is on the page, or there is nothing to focus. This runs
+    // inside the tap that asked for it, which is what makes a phone's keypad
+    // come up with it.
+    field.focus();
   }
 
   chooseAWay();
