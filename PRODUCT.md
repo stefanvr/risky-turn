@@ -35,10 +35,16 @@ they are declared. A round needs only a phone and a few minutes of attention.
 - A match can be read back. What has happened during play is available to a
   player while they play, reached the same way the game's numbers are.
 - Opening the game asks which way it is being played before it deals a board:
-  sharing one device, or playing on separate ones. The online way arrives
-  already holding a six-digit code — one player reads it out, the other types
-  it in — and joining is offered beneath that rather than as a second decision
+  sharing one device, or playing on separate ones. The online way sets a game
+  up by itself — one player reads out its six-digit code, the other types it
+  in — and joining is offered beneath that rather than as a second decision
   every player has to make.
+- A code on screen is a promise that typing it joins a game. It is therefore
+  shown only once the game it names is waiting; until then the screen says a
+  game is being got ready and shows no digits to read out.
+- The screen that takes a code asks for nothing before the code: it arrives
+  with the field ready for digits, so the keypad is already up, and the key
+  that finishes typing joins the game exactly as the button does.
 - A match depends on the player who started it. If they leave, it ends for
   everyone: there is no handing a match on to somebody else and no waiting for
   its owner to come back.
